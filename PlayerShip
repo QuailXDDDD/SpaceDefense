@@ -1,0 +1,37 @@
+using UnityEngine;
+
+public class PlayerShip : MonoBehaviour
+{
+    public float moveSpeed = 5f;
+    public GameObject bulletPrefab;
+    public Transform firePoint;
+    public float fireRate = 0.2f;
+
+    private float fireTimer = 0f;
+
+    void Update()
+    {
+        Move();
+        Shoot();
+    }
+
+    void Move()
+    {
+        float moveX = Input.GetAxisRaw("Horizontal"); // A/D hoặc ←/→
+        float moveY = Input.GetAxisRaw("Vertical");   // W/S hoặc ↑/↓
+
+        Vector3 moveDirection = new Vector3(moveX, moveY, 0).normalized;
+        transform.Translate(moveDirection * moveSpeed * Time.deltaTime, Space.World);
+    }
+
+    void Shoot()
+    {
+        fireTimer += Time.deltaTime;
+
+        if ((Input.GetKey(KeyCode.Space) || Input.GetMouseButton(0)) && fireTimer >= fireRate)
+        {
+            Instantiate(bulletPrefab, firePoint.position, Quaternion.identity);
+            fireTimer = 0f;
+        }
+    }
+}
