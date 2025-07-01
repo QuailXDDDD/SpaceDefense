@@ -66,6 +66,7 @@
     <Compile Include="Assets\Scripts\BasicAttacker.cs" />
     <Compile Include="Assets\Scripts\Enemy.cs" />
     <Compile Include="Assets\Scripts\EnemyProjectile.cs" />
+    <Compile Include="Assets\Scripts\PlayerShip.cs" />
     <Compile Include="Assets\Scripts\BurstAttacker.cs" />
     <Compile Include="Assets\Scripts\ScrollingBackGround.cs" />
     <Compile Include="Assets\Scripts\EnemyData.cs" />
