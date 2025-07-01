@@ -70,6 +70,7 @@
     <Compile Include="Assets\Scripts\ScrollingBackGround.cs" />
     <Compile Include="Assets\Scripts\EnemyData.cs" />
     <Compile Include="Assets\Scripts\BossEnemy.cs" />
+    <Compile Include="Assets\Scripts\EnemyBehaviour.cs" />
     <Compile Include="Assets\Scripts\ExplodingProjectile.cs" />
   </ItemGroup>
   <ItemGroup>

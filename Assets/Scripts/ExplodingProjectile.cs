@@ -18,18 +18,18 @@ public class ExplodingProjectile : EnemyProjectile // This line is crucial: it i
     public int splitProjectileDamage = 5; // Damage of the smaller projectiles
     public float splitSpreadAngle = 90f; // Total angle to spread them (e.g., 90 degrees for a quarter-circle spread)
 
-    // Override OnTriggerEnter2D to add explosion and splitting logic
-    protected override void OnTriggerEnter2D(Collider2D other)
-    {
-        // Only explode if we hit something that should trigger an explosion
-        // (e.g., player, enemy, obstacle - define your collision layers/tags)
-        if (other.CompareTag("Player") || other.CompareTag("Enemy") || other.CompareTag("Obstacle"))
-        {
-            DoExplosion();
-            Destroy(gameObject); // Destroy the projectile itself after exploding
-        }
-        // If you want it to bounce off certain things, add else if conditions here without Destroy(gameObject)
-    }
+    //// Override OnTriggerEnter2D to add explosion and splitting logic
+    //protected override void OnTriggerEnter2D(Collider2D other)
+    //{
+    //    // Only explode if we hit something that should trigger an explosion
+    //    // (e.g., player, enemy, obstacle - define your collision layers/tags)
+    //    if (other.CompareTag("Player") || other.CompareTag("Enemy") || other.CompareTag("Obstacle"))
+    //    {
+    //        DoExplosion();
+    //        Destroy(gameObject); // Destroy the projectile itself after exploding
+    //    }
+    //    // If you want it to bounce off certain things, add else if conditions here without Destroy(gameObject)
+    //}
 
     void DoExplosion()
     {

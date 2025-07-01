@@ -1,18 +1,19 @@
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "NewEnemyData", menuName = "Enemy Data/Base Enemy Data")]
+[CreateAssetMenu(fileName = "NewEnemyData", menuName = "Enemy/Enemy Data")]
 public class EnemyData : ScriptableObject
 {
     [Header("Base Stats")]
-    public string enemyName = "New Enemy";
-    public int maxHealth = 100;
+    public string enemyName = "Basic Enemy";
+    public int maxHealth = 50;
     public int scoreValue = 10;
+    public float moveSpeed = 0f; // Added: Speed at which the enemy moves downwards
 
     [Header("Visuals")]
     public Sprite enemySprite;
-    public Vector3 scale = Vector3.one; // Default scale
+    public Vector3 scale = new Vector3(1, 1, 1); // Default scale
 
-    [Header("Attack Properties (General)")]
+    [Header("Attack Properties")]
     public float baseFireRate = 1f; // Shots per second
     public GameObject projectilePrefab; // Default projectile for this enemy type
     public int projectileDamage = 10;
