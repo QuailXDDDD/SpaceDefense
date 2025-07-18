@@ -4,6 +4,10 @@ using System.Collections.Generic; // For List
 
 public class BossEnemy : Enemy
 {
+    [Header("Boss Components")]
+    private BossPhaseAttacker phaseAttacker;
+    private BossSpecialAbilities specialAbilities;
+    
     [Header("Boss Specifics")]
     public float entryMoveDuration = 3f;
     public Vector3 entryTargetPosition = new Vector3(0, 3, 0); // Where the boss stops
@@ -21,6 +25,11 @@ public class BossEnemy : Enemy
     protected override void Start()
     {
         base.Start(); // Call the base Enemy Start method to initialize health and visuals
+        
+        // Get boss-specific components
+        phaseAttacker = GetComponent<BossPhaseAttacker>();
+        specialAbilities = GetComponent<BossSpecialAbilities>();
+        
         currentPhase = 0;
         StartCoroutine(EntryMovement());
     }
@@ -73,6 +82,12 @@ public class BossEnemy : Enemy
         // Deactivate all existing attack components first to ensure clean transition
         DeactivateAllAttackComponents();
 
+        // Update the phase attacker if available
+        if (phaseAttacker != null)
+        {
+            phaseAttacker.UpdatePhase(phaseNumber);
+        }
+
         List<MonoBehaviour> attacksToEnable = new List<MonoBehaviour>();
         if (phaseNumber == 1)
         {
@@ -116,7 +131,47 @@ public class BossEnemy : Enemy
     protected override void Die()
     {
         Debug.Log("Boss Defeated! Game Over!");
+        
+        // Play boss explosion sound effect
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlayBossExplosion();
+        }
+        
+        // Spawn death effect if available
+        if (enemyData is BossEnemyData bossData && bossData.deathEffect != null)
+        {
+            Instantiate(bossData.deathEffect, transform.position, transform.rotation);
+        }
+        
         // Implement end-game logic, victory screen, etc.
         base.Die(); // Call base Enemy Die method to destroy object
+    }
+    
+    // Override TakeDamage to handle shield
+    public override void TakeDamage(int amount)
+    {
+        // Check if shield is active
+        if (specialAbilities != null && specialAbilities.ShouldBlockDamage())
+        {
+            Debug.Log("Boss: Damage blocked by shield!");
+            return;
+        }
+        
+        // Temporarily store the current health to avoid calling enemy hit sound
+        int healthBefore = CurrentHealth;
+        
+        // Call base TakeDamage which handles health calculation and death
+        base.TakeDamage(amount);
+        
+        // Only play boss hit sound if damage was actually taken and boss is still alive
+        if (CurrentHealth < healthBefore && CurrentHealth > 0)
+        {
+            // Play boss hit sound effect instead of the enemy hit sound from base class
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayBossHit();
+            }
+        }
     }
 }

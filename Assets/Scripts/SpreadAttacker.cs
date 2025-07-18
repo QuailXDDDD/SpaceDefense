@@ -44,6 +44,12 @@ public class SpreadAttacker : MonoBehaviour
         nextFireTime = Time.time + (1f / fireRate); // Initial delay
     }
 
+    // Public method to enable immediate shooting (called by formations)
+    public void EnableImmediateShooting()
+    {
+        nextFireTime = Time.time; // Allow shooting immediately
+    }
+
     void Update()
     {
         if (Time.time >= nextFireTime)
@@ -59,6 +65,12 @@ public class SpreadAttacker : MonoBehaviour
         {
             Debug.LogWarning("SpreadAttacker: Projectile Prefab or Fire Point missing!", this);
             return;
+        }
+
+        // Play shooting sound effect
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlayEnemyShoot();
         }
 
         float startAngle = -spreadAngle / 2f;

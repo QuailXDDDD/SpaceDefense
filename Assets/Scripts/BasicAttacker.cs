@@ -43,9 +43,19 @@ public class BasicAttacker : MonoBehaviour
         nextFireTime = Time.time + (1f / fireRate); // Initial delay based on fire rate
     }
 
+    // Public method to enable immediate shooting (called by formations)
+    public void EnableImmediateShooting()
+    {
+        nextFireTime = Time.time; // Allow shooting immediately
+    }
+
     void Update()
     {
-        if (Time.time >= nextFireTime)
+        // Only fire if fully inside the camera's viewport
+        Vector3 viewportPos = Camera.main.WorldToViewportPoint(transform.position);
+        bool fullyOnScreen = viewportPos.x > 0 && viewportPos.x < 1 && viewportPos.y > 0 && viewportPos.y < 1;
+
+        if (fullyOnScreen && Time.time >= nextFireTime)
         {
             Attack();
             nextFireTime = Time.time + (1f / fireRate);
@@ -56,6 +66,12 @@ public class BasicAttacker : MonoBehaviour
     {
         if (projectilePrefab != null && firePoint != null)
         {
+            // Play shooting sound effect
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayEnemyShoot();
+            }
+            
             GameObject projectileGO = Instantiate(projectilePrefab, firePoint.position, firePoint.rotation);
             // Ensure the projectile script has its damage/speed set
             EnemyProjectile projectile = projectileGO.GetComponent<EnemyProjectile>();

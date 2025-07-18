@@ -45,6 +45,12 @@ public class BurstAttacker : MonoBehaviour
         nextBurstTime = Time.time + cooldownAfterBurst; // Initial delay
     }
 
+    // Public method to enable immediate shooting (called by formations)
+    public void EnableImmediateShooting()
+    {
+        nextBurstTime = Time.time; // Allow shooting immediately
+    }
+
     void Update()
     {
         if (Time.time >= nextBurstTime)
@@ -56,6 +62,12 @@ public class BurstAttacker : MonoBehaviour
 
     IEnumerator FireBurst()
     {
+        // Play shooting sound effect once for the burst
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlayEnemyShoot();
+        }
+        
         for (int i = 0; i < burstCount; i++)
         {
             if (projectilePrefab != null && firePoint != null)

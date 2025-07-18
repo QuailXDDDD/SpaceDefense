@@ -4,6 +4,9 @@ public class EnemyBehaviour : MonoBehaviour
 {
     // Reference to the ScriptableObject holding this enemy's data
     public EnemyData enemyData;
+    
+    [Header("Effects")]
+    public GameObject explosionPrefab; // Assign explosion effect prefab here
 
     private int currentHealth;
     private float nextFireTime;
@@ -19,9 +22,31 @@ public class EnemyBehaviour : MonoBehaviour
     {
         if (enemyData == null)
         {
-            Debug.LogError("EnemyData is not assigned to " + gameObject.name + "! Destroying enemy.", this);
-            Destroy(gameObject);
-            return;
+            Debug.LogWarning("EnemyData is not assigned to " + gameObject.name + "! Trying to find one...", this);
+            
+            // Try to find EnemyData from other enemy components
+            Enemy enemyComponent = GetComponent<Enemy>();
+            if (enemyComponent != null && enemyComponent.enemyData != null)
+            {
+                enemyData = enemyComponent.enemyData;
+                Debug.Log("Found EnemyData from Enemy component!");
+            }
+            else
+            {
+                // Last resort - load a basic enemy data asset
+                EnemyData[] allEnemyData = Resources.FindObjectsOfTypeAll<EnemyData>();
+                if (allEnemyData.Length > 0)
+                {
+                    enemyData = allEnemyData[0];
+                    Debug.LogWarning($"Using fallback EnemyData: {enemyData.name}");
+                }
+                else
+                {
+                    Debug.LogError("No EnemyData found anywhere! Enemy will be destroyed.");
+                    Destroy(gameObject);
+                    return;
+                }
+            }
         }
 
         // Initialize current health from the ScriptableObject's max health
@@ -38,12 +63,25 @@ public class EnemyBehaviour : MonoBehaviour
         nextFireTime = Time.time + enemyData.baseFireRate;
     }
 
+    // Public method to enable immediate shooting (called by formations)
+    public void EnableImmediateShooting()
+    {
+        nextFireTime = Time.time; // Allow shooting immediately
+    }
+    
     void Update()
     {
         // --- Movement Logic ---
-        // Move the enemy straight down
-        // The enemyData.moveSpeed is now set to 0, so this line will effectively do nothing.
-        transform.Translate(Vector2.down * enemyData.moveSpeed * Time.deltaTime);
+        // Only move if not part of a formation (formation handles movement)
+        bool isPartOfFormation = transform.parent != null && 
+                                (transform.parent.GetComponent<ZigZagFormation1>() != null || 
+                                 transform.parent.GetComponent<SkullFormation>() != null);
+        
+        if (!isPartOfFormation)
+        {
+            // Move the enemy straight down
+            transform.Translate(Vector2.down * enemyData.moveSpeed * Time.deltaTime);
+        }
 
         // --- Shooting Logic ---
         // Check if it's time to shoot and if a projectile prefab is assigned
@@ -58,6 +96,12 @@ public class EnemyBehaviour : MonoBehaviour
     // Handles the enemy shooting a projectile
     void Shoot()
     {
+        // Play shooting sound effect
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlayEnemyShoot();
+        }
+        
         // Instantiate the projectile prefab at the enemy's position
         GameObject projectileGO = Instantiate(enemyData.projectilePrefab, transform.position, Quaternion.identity);
 
@@ -72,36 +116,55 @@ public class EnemyBehaviour : MonoBehaviour
         }
     }
 
-    // --- Damage and Destruction Logic (Commented Out for now) ---
-    /*
     // Public method to take damage, called by player bullets
     public void TakeDamage(int damageAmount)
     {
         currentHealth -= damageAmount;
         Debug.Log($"{enemyData.enemyName} took {damageAmount} damage. Current Health: {currentHealth}");
+        
+        // Play hit sound effect
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlayEnemyHit();
+        }
 
         if (currentHealth <= 0)
         {
-            // Optional: Add score to player, play explosion effect, etc.
+            // Play explosion sound effect
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayEnemyExplosion();
+            }
+            
+            // Create explosion effect
+            if (explosionPrefab != null)
+            {
+                Instantiate(explosionPrefab, transform.position, Quaternion.identity);
+            }
+            
             Debug.Log($"{enemyData.enemyName} destroyed! Score added: {enemyData.scoreValue}");
             Destroy(gameObject); // Destroy the enemy GameObject
         }
     }
-    */
 
-    // Handles collisions when 'Is Trigger' is checked on the Collider2D (Commented Out for now)
-    /*
+    // Handles collisions when 'Is Trigger' is checked on the Collider2D
     void OnTriggerEnter2D(Collider2D other)
     {
         // Check if the collider belongs to a PlayerBullet
         if (other.CompareTag("PlayerBullet"))
         {
-            // Get the PlayerBullet script to retrieve its damage amount
-            PlayerBullet playerBullet = other.GetComponent<PlayerBullet>();
-            if (playerBullet != null)
+            // Get the BulletScript to retrieve its damage amount
+            BulletScript bulletScript = other.GetComponent<BulletScript>();
+            if (bulletScript != null)
             {
-                TakeDamage(playerBullet.damage); // This line refers to the TakeDamage method above
+                TakeDamage(bulletScript.damage);
             }
+            else
+            {
+                // Default damage if no script found
+                TakeDamage(10);
+            }
+            
             // Destroy the player bullet after it hits the enemy
             Destroy(other.gameObject);
         }
@@ -111,15 +174,30 @@ public class EnemyBehaviour : MonoBehaviour
         //      // Deal damage to player, destroy enemy, etc.
         // }
     }
-    */
 
     // Destroy enemy if it moves off-screen
     void OnBecameInvisible()
     {
-        // Check if the enemy is well below the screen before destroying
-        // Adjust -10f based on your camera's bottom edge and enemy size
-        if (transform.position.y < Camera.main.ViewportToWorldPoint(new Vector3(0, 0, 0)).y - 2f)
+        // Don't destroy if this enemy is part of a formation that's still entering the screen
+        if (transform.parent != null)
         {
+            StraightRowFormation straightFormation = transform.parent.GetComponent<StraightRowFormation>();
+            ZigZagFormation1 zigzagFormation = transform.parent.GetComponent<ZigZagFormation1>();
+            CircleFormation circleFormation = transform.parent.GetComponent<CircleFormation>();
+            
+            // If part of any formation, let the formation handle destruction
+            if (straightFormation != null || zigzagFormation != null || circleFormation != null)
+            {
+                Debug.Log($"EnemyBehaviour: {gameObject.name} is part of formation, not destroying on invisible");
+                return;
+            }
+        }
+        
+        // Only destroy if enemy is significantly below the screen (not just off the top/sides)
+        Vector3 screenBottom = Camera.main.ViewportToWorldPoint(new Vector3(0, 0, 0));
+        if (transform.position.y < screenBottom.y - 5f)
+        {
+            Debug.Log($"EnemyBehaviour: {gameObject.name} destroyed for being off-screen (y: {transform.position.y})");
             Destroy(gameObject);
         }
     }

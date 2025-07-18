@@ -4,6 +4,9 @@ public class Enemy : MonoBehaviour
 {
     [Header("Enemy Data")]
     public EnemyData enemyData; // Assign the Scriptable Object here in the Inspector
+    
+    [Header("Effects")]
+    public GameObject explosionPrefab; // Assign the Explosion_FX prefab here
 
     private int currentHealth;
     private SpriteRenderer spriteRenderer; // To display the enemy's sprite
@@ -35,10 +38,16 @@ public class Enemy : MonoBehaviour
         transform.localScale = enemyData.scale; // Apply scale from data
     }
 
-    public void TakeDamage(int amount)
+    public virtual void TakeDamage(int amount)
     {
         currentHealth -= amount;
         Debug.Log($"{gameObject.name} took {amount} damage. Health: {currentHealth}");
+        
+        // Play hit sound effect
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlayEnemyHit();
+        }
 
         if (currentHealth <= 0)
         {
@@ -49,7 +58,20 @@ public class Enemy : MonoBehaviour
     protected virtual void Die()
     {
         Debug.Log($"{gameObject.name} has been destroyed!");
-        // TODO: Add explosion effects, score, etc.
+        
+        // Play explosion sound effect
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlayEnemyExplosion();
+        }
+        
+        // Create explosion effect
+        if (explosionPrefab != null)
+        {
+            Instantiate(explosionPrefab, transform.position, Quaternion.identity);
+        }
+        
+        // TODO: Add score, etc.
         Destroy(gameObject);
     }
 }
