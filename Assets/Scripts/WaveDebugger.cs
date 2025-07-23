@@ -32,7 +32,6 @@ public class WaveDebugger : MonoBehaviour
     {
         Debug.Log("=== WAVE SYSTEM DEBUG VALIDATION ===");
         
-        // Check for WaveManager
         WaveManager waveManager = FindFirstObjectByType<WaveManager>();
         if (waveManager == null)
         {
@@ -42,16 +41,14 @@ public class WaveDebugger : MonoBehaviour
         
         Debug.Log("✅ WaveManager found");
         
-        // Check WaveManager prefab assignments
         ValidatePrefabAssignment("Wave 1 Enemy Prefab", waveManager.wave1EnemyPrefab);
         ValidatePrefabAssignment("Wave 2 Enemy Prefab", waveManager.wave2EnemyPrefab);
         ValidatePrefabAssignment("Wave 3 Enemy Prefab", waveManager.wave3EnemyPrefab);
+        ValidatePrefabAssignment("Wave 4 Enemy Prefab", waveManager.wave4EnemyPrefab);
         ValidatePrefabAssignment("Boss Prefab", waveManager.bossPrefab);
         
-        // Check for conflicting spawners
         CheckForConflictingSpawners();
         
-        // Check current wave state
         Debug.Log($"Current Wave: {waveManager.currentWave}");
         Debug.Log($"Wave In Progress: {waveManager.waveInProgress}");
         Debug.Log($"Active Enemies: {waveManager.activeEnemies.Count}");
@@ -69,7 +66,6 @@ public class WaveDebugger : MonoBehaviour
         {
             Debug.Log($"✅ {prefabName} assigned: {prefab.name}");
             
-            // Check if prefab has required components
             if (prefab.GetComponent<Enemy>() == null && prefab.GetComponent<EnemyBehaviour>() == null && prefab.GetComponent<BossEnemy>() == null)
             {
                 Debug.LogWarning($"⚠️ {prefabName} doesn't have Enemy, EnemyBehaviour, or BossEnemy component!");
@@ -89,13 +85,12 @@ public class WaveDebugger : MonoBehaviour
     
     void CheckForConflictingSpawners()
     {
-        // Check for old formation objects that might conflict
         ZigZagFormation1[] zigzagFormations = FindObjectsByType<ZigZagFormation1>(FindObjectsSortMode.None);
         if (zigzagFormations.Length > 0)
         {
             foreach (var formation in zigzagFormations)
             {
-                if (formation.transform.parent == null) // Not part of wave system
+                if (formation.transform.parent == null)
                 {
                     Debug.LogWarning($"⚠️ Found existing ZigZagFormation1 on '{formation.gameObject.name}' that might conflict with wave system. Consider disabling it.");
                 }
@@ -107,14 +102,13 @@ public class WaveDebugger : MonoBehaviour
         {
             foreach (var formation in skullFormations)
             {
-                if (formation.transform.parent == null) // Not part of wave system
+                if (formation.transform.parent == null)
                 {
                     Debug.LogWarning($"⚠️ Found existing SkullFormation on '{formation.gameObject.name}' that might conflict with wave system. Consider disabling it.");
                 }
             }
         }
         
-        // Check for BossSpawner components (if they exist)
         MonoBehaviour[] allBehaviours = FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None);
         int bossSpawnerCount = 0;
         foreach (var behaviour in allBehaviours)
@@ -146,7 +140,6 @@ public class WaveDebugger : MonoBehaviour
         {
             Debug.Log($"✅ Successfully spawned test enemy: {testEnemy.name}");
             
-            // Destroy after 5 seconds for cleanup
             Destroy(testEnemy, 5f);
         }
         else
@@ -212,7 +205,6 @@ public class WaveDebugger : MonoBehaviour
         Debug.Log($"Found {enemyBehaviours.Length} EnemyBehaviour components in scene");
         Debug.Log($"Found {bosses.Length} BossEnemy components in scene");
         
-        // Check for formations
         StraightRowFormation[] straightFormations = FindObjectsByType<StraightRowFormation>(FindObjectsSortMode.None);
         ZigZagFormation1[] zigzagFormations = FindObjectsByType<ZigZagFormation1>(FindObjectsSortMode.None);
         CircleFormation[] circleFormations = FindObjectsByType<CircleFormation>(FindObjectsSortMode.None);
@@ -234,13 +226,11 @@ public class WaveDebugger : MonoBehaviour
     {
         if (!enableDebugMode) return;
         
-        // Draw spawn position
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(new Vector3(0, 10, 0), 1f);
         Gizmos.color = Color.red;
         Gizmos.DrawLine(new Vector3(-2, 10, 0), new Vector3(2, 10, 0));
         
-        // Draw screen bounds for reference
         if (Camera.main != null)
         {
             Camera mainCam = Camera.main;

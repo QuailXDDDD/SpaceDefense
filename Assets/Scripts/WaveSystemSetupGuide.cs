@@ -1,9 +1,5 @@
 using UnityEngine;
 
-/// <summary>
-/// This script provides setup instructions for the Wave System.
-/// Attach this to a GameObject in your scene for easy reference during development.
-/// </summary>
 public class WaveSystemSetupGuide : MonoBehaviour
 {
     [Header("Setup Instructions")]
@@ -60,8 +56,9 @@ WAVE SYSTEM SETUP GUIDE:
    c) Assign all required prefabs
    d) Configure wave settings:
       - Wave 1: 3 enemies, 2f spacing, 2f move speed
-      - Wave 2: 4x6 formation, 1f spacing, 2f move speed
-      - Wave 3: 5 enemies, 3f radius, 30f rotation speed
+      - Wave 2: 2x5 grid formation, 1.5f spacing, 2f move speed
+      - Wave 3: 4x6 formation, 1f spacing, 2f move speed
+      - Wave 4: 5 enemies, 3f radius, 30f rotation speed
 
 3. SETUP UI (Optional):
    a) Create Canvas (UI > Canvas)
@@ -83,13 +80,19 @@ WAVE 1 - Straight Row Formation:
 - No side-to-side movement
 - Basic enemy shooting patterns
 
-WAVE 2 - ZigZag Formation:
+WAVE 2 - Grid Formation:
+- 2 rows of 5 enemies (10 total)
+- Spawns in neat grid pattern
+- Moves straight down as formation
+- Coordinated enemy attacks
+
+WAVE 3 - ZigZag Formation:
 - 4x6 grid of enemies (24 total)
 - Side-to-side zigzag movement
 - Move down while zigzagging
 - Formation stays together
 
-WAVE 3 - Circle Formation + Boss:
+WAVE 4 - Circle Formation + Boss:
 - 5 enemies in circle formation
 - Boss enemy in center
 - Enemies rotate around boss
@@ -138,7 +141,6 @@ For more help, check the console for debug messages from:
         
         bool isValid = true;
         
-        // Check for WaveManager
         WaveManager waveManager = FindFirstObjectByType<WaveManager>();
         if (waveManager == null)
         {
@@ -149,7 +151,6 @@ For more help, check the console for debug messages from:
         {
             Debug.Log("✅ WaveManager found");
             
-            // Check prefab assignments
             if (waveManager.wave1EnemyPrefab == null)
             {
                 Debug.LogError("❌ Wave 1 Enemy Prefab not assigned!");
@@ -191,7 +192,6 @@ For more help, check the console for debug messages from:
             }
         }
         
-        // Check for WaveUI
         WaveUI waveUI = FindFirstObjectByType<WaveUI>();
         if (waveUI == null)
         {
@@ -202,7 +202,6 @@ For more help, check the console for debug messages from:
             Debug.Log("✅ WaveUI found");
         }
         
-        // Check for AudioManager
         AudioManager audioManager = FindFirstObjectByType<AudioManager>();
         if (audioManager == null)
         {
@@ -226,7 +225,6 @@ For more help, check the console for debug messages from:
     [ContextMenu("Create Basic UI Setup")]
     public void CreateBasicUISetup()
     {
-        // Find or create Canvas
         Canvas canvas = FindFirstObjectByType<Canvas>();
         if (canvas == null)
         {
@@ -237,7 +235,6 @@ For more help, check the console for debug messages from:
             canvasObj.AddComponent<UnityEngine.UI.GraphicRaycaster>();
         }
         
-        // Create UI GameObject
         GameObject waveUIObj = new GameObject("WaveUI");
         waveUIObj.transform.SetParent(canvas.transform, false);
         

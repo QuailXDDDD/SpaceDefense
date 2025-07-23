@@ -64,7 +64,6 @@ public class AudioManager : MonoBehaviour
     
     void Awake()
     {
-        // Singleton pattern
         if (Instance == null)
         {
             Instance = this;
@@ -79,7 +78,6 @@ public class AudioManager : MonoBehaviour
     
     void InitializeAudioSources()
     {
-        // Create audio sources if they don't exist
         if (musicAudioSource == null)
         {
             GameObject musicSource = new GameObject("MusicAudioSource");
@@ -115,7 +113,6 @@ public class AudioManager : MonoBehaviour
             sfxAudioSource.volume = masterVolume * sfxVolume;
     }
     
-    // Play sound effect methods
     public void PlayPlayerShoot()
     {
         PlaySFX(playerShootSound, playerShootVolume);
@@ -171,7 +168,6 @@ public class AudioManager : MonoBehaviour
         PlaySFX(powerUpSound, powerUpVolume);
     }
     
-    // Generic method to play any sound effect with individual volume
     public void PlaySFX(AudioClip clip, float individualVolume = 1f)
     {
         if (clip != null && sfxAudioSource != null)
@@ -181,13 +177,11 @@ public class AudioManager : MonoBehaviour
         }
     }
     
-    // Overloaded method for backward compatibility
     public void PlaySFX(AudioClip clip)
     {
         PlaySFX(clip, 1f);
     }
     
-    // Music control methods
     public void PlayMusic(AudioClip musicClip)
     {
         if (musicClip != null && musicAudioSource != null)
@@ -221,7 +215,6 @@ public class AudioManager : MonoBehaviour
         }
     }
     
-    // Volume control methods
     public void SetMasterVolume(float volume)
     {
         masterVolume = Mathf.Clamp01(volume);
@@ -237,7 +230,6 @@ public class AudioManager : MonoBehaviour
         sfxVolume = Mathf.Clamp01(volume);
     }
     
-    // Individual volume control methods
     public void SetPlayerShootVolume(float volume)
     {
         playerShootVolume = Mathf.Clamp01(volume);

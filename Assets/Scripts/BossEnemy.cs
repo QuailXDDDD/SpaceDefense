@@ -1,6 +1,6 @@
 using UnityEngine;
-using System.Collections; // For coroutines
-using System.Collections.Generic; // For List
+using System.Collections;
+using System.Collections.Generic;
 
 public class BossEnemy : Enemy
 {
@@ -10,28 +10,126 @@ public class BossEnemy : Enemy
     
     [Header("Boss Specifics")]
     public float entryMoveDuration = 3f;
-    public Vector3 entryTargetPosition = new Vector3(0, 3, 0); // Where the boss stops
-    public float phase1HealthThreshold = 0.7f; // E.g., at 70% health, transition to phase 2
-    public float phase2HealthThreshold = 0.3f; // E.g., at 30% health, transition to phase 3
+    public Vector3 entryTargetPosition = new Vector3(0, 3, 0);
+    public float phase1HealthThreshold = 0.7f;
+    public float phase2HealthThreshold = 0.3f;
 
     [Header("Attack Phases")]
-    public List<MonoBehaviour> phase1Attacks; // Assign specific attack components here (e.g., BasicAttacker)
-    public List<MonoBehaviour> phase2Attacks; // (e.g., BurstAttacker, SpreadAttacker)
-    public List<MonoBehaviour> phase3Attacks; // (e.g., all active, more intense)
+    public List<MonoBehaviour> phase1Attacks;
+    public List<MonoBehaviour> phase2Attacks;
+    public List<MonoBehaviour> phase3Attacks;
 
     private bool enteredArena = false;
-    private int currentPhase = 0; // 0 = entry, 1, 2, 3...
+    private int currentPhase = 0;
 
     protected override void Start()
     {
-        base.Start(); // Call the base Enemy Start method to initialize health and visuals
+        base.Start();
         
-        // Get boss-specific components
         phaseAttacker = GetComponent<BossPhaseAttacker>();
         specialAbilities = GetComponent<BossSpecialAbilities>();
         
         currentPhase = 0;
+        
+        Debug.Log($"Boss: Started with {CurrentHealth}/{enemyData.maxHealth} health. Spawn protection should be active.");
+        
         StartCoroutine(EntryMovement());
+    }
+    
+    void OnEnable()
+    {
+        Debug.Log($"Boss: OnEnable called. EnteredArena: {enteredArena}, HasSpawnProtection: {hasSpawnProtection}");
+        
+        EnsureSpriteVisibility();
+        
+        if (hasSpawnProtection && !enteredArena)
+        {
+            RemoveSpawnProtection();
+            StartSpawnProtection();
+            Debug.Log("Boss: Spawn protection restarted after being re-enabled");
+        }
+    }
+    
+    private void EnsureSpriteVisibility()
+    {
+        SpriteRenderer sr = GetComponent<SpriteRenderer>();
+        if (sr != null)
+        {
+            Debug.Log($"Boss: Checking sprite visibility - Enabled: {sr.enabled}, Sprite: {sr.sprite != null}, Color: {sr.color}, SortingOrder: {sr.sortingOrder}, Material: {sr.material != null}");
+            
+            sr.enabled = true;
+            
+            sr.color = Color.white;
+            Debug.Log("Boss: Set color to bright white");
+            
+            sr.sortingOrder = 15;
+            Debug.Log("Boss: Set very high sorting order for visibility");
+            
+            if (sr.sprite == null)
+            {
+                Debug.LogWarning("Boss: No sprite assigned! Checking enemy data...");
+                if (enemyData != null && enemyData.enemySprite != null)
+                {
+                    sr.sprite = enemyData.enemySprite;
+                    Debug.Log("Boss: Assigned sprite from enemy data");
+                }
+                else
+                {
+                    Debug.LogError("Boss: No sprite in enemy data either! Creating fallback sprite...");
+                    CreateFallbackBossSprite(sr);
+                }
+            }
+            
+            if (sr.material == null || sr.material.name.Contains("Lit"))
+            {
+                sr.material = new Material(Shader.Find("Sprites/Default"));
+                Debug.Log($"Boss: Changed material from {(sr.material?.name ?? "null")} to Sprites/Default");
+            }
+            
+            if (transform.localScale.magnitude < 0.5f)
+            {
+                transform.localScale = Vector3.one;
+                Debug.Log("Boss: Fixed too-small scale");
+            }
+            
+            Debug.Log($"Boss: After visibility fixes - Enabled: {sr.enabled}, Sprite: {sr.sprite != null}, Color: {sr.color}, SortingOrder: {sr.sortingOrder}, Scale: {transform.localScale}");
+        }
+        else
+        {
+            Debug.LogError("Boss: No SpriteRenderer component found!");
+        }
+    }
+    
+    private void CreateFallbackBossSprite(SpriteRenderer sr)
+    {
+        Texture2D texture = new Texture2D(64, 64);
+        
+        for (int x = 0; x < 64; x++)
+        {
+            for (int y = 0; y < 64; y++)
+            {
+                Vector2 center = new Vector2(32, 32);
+                float distance = Vector2.Distance(new Vector2(x, y), center);
+                
+                if (distance < 28)
+                {
+                    texture.SetPixel(x, y, Color.red);
+                }
+                else if (distance < 30)
+                {
+                    texture.SetPixel(x, y, Color.yellow);
+                }
+                else
+                {
+                    texture.SetPixel(x, y, Color.clear);
+                }
+            }
+        }
+        
+        texture.Apply();
+        Sprite fallbackSprite = Sprite.Create(texture, new Rect(0, 0, 64, 64), new Vector2(0.5f, 0.5f));
+        sr.sprite = fallbackSprite;
+        Debug.Log("Boss: Created bright red fallback sprite");
     }
 
     void Update()
@@ -54,10 +152,10 @@ public class BossEnemy : Enemy
             timer += Time.deltaTime;
             yield return null;
         }
-        transform.position = entryTargetPosition; // Ensure it's exactly at the target
+        transform.position = entryTargetPosition;
         enteredArena = true;
         Debug.Log("Boss: Entered arena. Activating Phase 1 attacks.");
-        ActivatePhase(1); // Start Phase 1
+        ActivatePhase(1);
     }
 
     void CheckPhaseTransitions()
@@ -72,17 +170,14 @@ public class BossEnemy : Enemy
         {
             ActivatePhase(3);
         }
-        // You can add more phases as needed
     }
 
     void ActivatePhase(int phaseNumber)
     {
         Debug.Log($"Boss: Activating Phase {phaseNumber}");
 
-        // Deactivate all existing attack components first to ensure clean transition
         DeactivateAllAttackComponents();
 
-        // Update the phase attacker if available
         if (phaseAttacker != null)
         {
             phaseAttacker.UpdatePhase(phaseNumber);
@@ -101,27 +196,23 @@ public class BossEnemy : Enemy
         {
             attacksToEnable.AddRange(phase3Attacks);
         }
-        // Add more phases here
 
         foreach (MonoBehaviour attackComponent in attacksToEnable)
         {
             if (attackComponent != null)
             {
-                attackComponent.enabled = true; // Enable the specific attack script
+                attackComponent.enabled = true;
             }
         }
-        currentPhase = phaseNumber; // Update current phase
+        currentPhase = phaseNumber;
     }
 
     void DeactivateAllAttackComponents()
     {
-        // Get all MonoBehaviour components that are children of Enemy or are attack types
-        // A more robust way might be to tag them or use an interface if you have many
         MonoBehaviour[] allAttackComponents = GetComponents<MonoBehaviour>();
         foreach (MonoBehaviour comp in allAttackComponents)
         {
-            // Only disable if it's an attack script you manage, not BossEnemy itself or Enemy script
-            if (comp is BasicAttacker || comp is BurstAttacker || comp is SpreadAttacker /* Add other attack types here */)
+            if (comp is BasicAttacker || comp is BurstAttacker || comp is SpreadAttacker)
             {
                 comp.enabled = false;
             }
@@ -130,48 +221,52 @@ public class BossEnemy : Enemy
 
     protected override void Die()
     {
+        Debug.Log($"Boss: Die() called! Health: {CurrentHealth}, EnteredArena: {enteredArena}, SpawnProtection: {isSpawnInvincible}");
         Debug.Log("Boss Defeated! Game Over!");
         
-        // Play boss explosion sound effect
         if (AudioManager.Instance != null)
         {
             AudioManager.Instance.PlayBossExplosion();
         }
         
-        // Spawn death effect if available
         if (enemyData is BossEnemyData bossData && bossData.deathEffect != null)
         {
             Instantiate(bossData.deathEffect, transform.position, transform.rotation);
         }
         
-        // Implement end-game logic, victory screen, etc.
-        base.Die(); // Call base Enemy Die method to destroy object
+        base.Die();
     }
     
-    // Override TakeDamage to handle shield
+    void OnDestroy()
+    {
+        Debug.Log($"Boss: OnDestroy called! Health: {CurrentHealth}, EnteredArena: {enteredArena}");
+    }
+    
     public override void TakeDamage(int amount)
     {
-        // Check if shield is active
+        Debug.Log($"Boss: TakeDamage called with {amount} damage. Current health: {CurrentHealth}");
+        
         if (specialAbilities != null && specialAbilities.ShouldBlockDamage())
         {
             Debug.Log("Boss: Damage blocked by shield!");
             return;
         }
         
-        // Temporarily store the current health to avoid calling enemy hit sound
         int healthBefore = CurrentHealth;
         
-        // Call base TakeDamage which handles health calculation and death
         base.TakeDamage(amount);
         
-        // Only play boss hit sound if damage was actually taken and boss is still alive
         if (CurrentHealth < healthBefore && CurrentHealth > 0)
         {
-            // Play boss hit sound effect instead of the enemy hit sound from base class
+            Debug.Log($"Boss: Took damage! Health: {CurrentHealth}/{enemyData.maxHealth}");
             if (AudioManager.Instance != null)
             {
                 AudioManager.Instance.PlayBossHit();
             }
+        }
+        else if (CurrentHealth == healthBefore)
+        {
+            Debug.Log("Boss: No damage taken (likely spawn protection active)");
         }
     }
 }

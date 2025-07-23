@@ -9,9 +9,9 @@ public class SpreadAttacker : MonoBehaviour
     private float projectileSpeed;
 
     public Transform firePoint;
-    public int numberOfProjectiles = 3; // How many projectiles in the spread
-    public float spreadAngle = 30f; // Total angle of the spread (e.g., 30 degrees)
-    public float fireRate = 2f; // Cooldown before next spread shot
+    public int numberOfProjectiles = 3;
+    public float spreadAngle = 30f;
+    public float fireRate = 2f;
 
     private float nextFireTime;
 
@@ -41,13 +41,12 @@ public class SpreadAttacker : MonoBehaviour
 
     void Start()
     {
-        nextFireTime = Time.time + (1f / fireRate); // Initial delay
+        nextFireTime = Time.time + (1f / fireRate);
     }
 
-    // Public method to enable immediate shooting (called by formations)
     public void EnableImmediateShooting()
     {
-        nextFireTime = Time.time; // Allow shooting immediately
+        nextFireTime = Time.time;
     }
 
     void Update()
@@ -67,7 +66,6 @@ public class SpreadAttacker : MonoBehaviour
             return;
         }
 
-        // Play shooting sound effect
         if (AudioManager.Instance != null)
         {
             AudioManager.Instance.PlayEnemyShoot();
@@ -76,7 +74,7 @@ public class SpreadAttacker : MonoBehaviour
         float startAngle = -spreadAngle / 2f;
         float angleStep = spreadAngle / (numberOfProjectiles - 1);
 
-        if (numberOfProjectiles == 1) // Handle single projectile case to avoid division by zero
+        if (numberOfProjectiles == 1)
         {
             InstantiateAndSetProjectile(firePoint.position, firePoint.rotation);
             return;

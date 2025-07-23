@@ -5,6 +5,7 @@ public class CircleFormation : MonoBehaviour
 {
     [Header("Formation Settings")]
     public GameObject enemyPrefab;
+    public GameObject specialEnemyPrefab;
     public GameObject bossPrefab;
     public int enemyCount = 5;
     public float circleRadius = 3f;
@@ -12,14 +13,14 @@ public class CircleFormation : MonoBehaviour
     public Vector3 bossScale = new Vector3(0.8f, 0.8f, 1f);
     
     [Header("Movement Settings")]
-    public float moveSpeed = 1f; // Formation movement speed (downward)
-    public float rotationSpeed = 30f; // Degrees per second for circle rotation
+    public float moveSpeed = 1f;
+    public float rotationSpeed = 30f;
     public Vector3 moveDirection = Vector3.down;
-    public bool stayInPosition = true; // If true, formation stays at target position for rotation
+    public bool stayInPosition = true;
     
     [Header("Spawn Settings")]
     public bool spawnFromOffScreen = true;
-    public float entryDuration = 3f; // Time to move from spawn to formation position
+    public float entryDuration = 3f;
     
     [Header("Boss Settings")]
     public bool activateBossOnEntry = true;
@@ -30,7 +31,6 @@ public class CircleFormation : MonoBehaviour
     private bool hasEnteredScreen = false;
     private float currentRotationAngle = 0f;
     
-    // Store initial positions relative to formation center
     private List<Vector3> initialEnemyPositions = new List<Vector3>();
     
     void Start()
@@ -40,9 +40,7 @@ public class CircleFormation : MonoBehaviour
         
         if (spawnFromOffScreen)
         {
-            // Set target position to upper part of screen for circle rotation
-            targetPosition = new Vector3(0, screenHeight * 0.6f, 0); // 60% up the screen
-            // Keep current off-screen position as starting point
+            targetPosition = new Vector3(0, screenHeight * 0.6f, 0);
             Debug.Log($"CircleFormation: Starting at {transform.position}, target: {targetPosition}");
         }
         else
@@ -72,18 +70,15 @@ public class CircleFormation : MonoBehaviour
         {
             RotateCircle();
             
-            // Only move formation down if not set to stay in position
             if (!stayInPosition)
             {
                 MoveFormation();
             }
         }
         
-        // Clean up destroyed enemies
         CleanupDestroyedEnemies();
         
-        // Debug: Log formation status every few seconds
-        if (Time.time % 3f < Time.deltaTime) // Every 3 seconds
+        if (Time.time % 3f < Time.deltaTime)
         {
             int totalEnemies = GetRemainingEnemyCount();
             Debug.Log($"CircleFormation: {totalEnemies} enemies/boss alive, hasEnteredScreen: {hasEnteredScreen}, position: {transform.position}, stayInPosition: {stayInPosition}");
@@ -92,41 +87,105 @@ public class CircleFormation : MonoBehaviour
     
     void CreateCircleFormation()
     {
-        // First, create the boss in the center
         if (bossPrefab != null)
         {
+            Debug.Log($"CircleFormation: Creating boss at position {transform.position}");
             bossEnemy = Instantiate(bossPrefab, transform.position, Quaternion.identity, transform);
             
-            // Set scale only if different from current scale
+            if (bossEnemy == null)
+            {
+                Debug.LogError("CircleFormation: Failed to instantiate boss!");
+                return;
+            }
+            
+            Debug.Log($"CircleFormation: Boss instantiated successfully. Position: {bossEnemy.transform.position}, Active: {bossEnemy.activeInHierarchy}");
+            
             if (bossEnemy.transform.localScale != bossScale)
             {
                 bossEnemy.transform.localScale = bossScale;
             }
             
-            // Disable boss initially if we're spawning from off-screen
-            if (spawnFromOffScreen)
+            BossEnemy bossScript = bossEnemy.GetComponent<BossEnemy>();
+            if (bossScript != null)
             {
-                BossEnemy bossScript = bossEnemy.GetComponent<BossEnemy>();
-                if (bossScript != null)
+                Debug.Log($"CircleFormation: Boss script found. Health: {bossScript.CurrentHealth}");
+                
+                if (spawnFromOffScreen)
                 {
                     bossScript.enabled = false;
+                    Debug.Log("CircleFormation: Boss script disabled for entry movement");
+                }
+            }
+            else
+            {
+                Debug.LogError("CircleFormation: Boss script not found on boss prefab!");
+            }
+            
+            // Check and fix sprite renderer
+            SpriteRenderer bossRenderer = bossEnemy.GetComponent<SpriteRenderer>();
+            if (bossRenderer != null)
+            {
+                Debug.Log($"CircleFormation: Boss sprite renderer - Sprite: {bossRenderer.sprite != null}, Color: {bossRenderer.color}, Enabled: {bossRenderer.enabled}, SortingOrder: {bossRenderer.sortingOrder}");
+                
+                // Ensure sprite renderer is visible
+                bossRenderer.enabled = true;
+                
+                // Fix color if it's transparent
+                if (bossRenderer.color.a < 0.1f)
+                {
+                    bossRenderer.color = Color.white;
+                    Debug.Log("CircleFormation: Fixed boss color (was transparent)");
                 }
                 
-                // Disable boss attack components initially
+                // Set high sorting order to ensure visibility
+                bossRenderer.sortingOrder = 10;
+                
+                // If no sprite assigned, try to get from BossEnemyData
+                if (bossRenderer.sprite == null)
+                {
+                    BossEnemy bossComponent = bossEnemy.GetComponent<BossEnemy>();
+                    if (bossComponent != null && bossComponent.enemyData != null && bossComponent.enemyData.enemySprite != null)
+                    {
+                        bossRenderer.sprite = bossComponent.enemyData.enemySprite;
+                        Debug.Log("CircleFormation: Assigned sprite from BossEnemyData");
+                    }
+                    else
+                    {
+                        Debug.LogWarning("CircleFormation: Boss has no sprite assigned!");
+                    }
+                }
+                
+                Debug.Log($"CircleFormation: After fixes - Sprite: {bossRenderer.sprite != null}, Color: {bossRenderer.color}, SortingOrder: {bossRenderer.sortingOrder}");
+            }
+            else
+            {
+                Debug.LogError("CircleFormation: No SpriteRenderer found on boss!");
+            }
+            
+            // Disable boss attack components initially
+            if (spawnFromOffScreen)
+            {
                 MonoBehaviour[] attackComponents = bossEnemy.GetComponents<MonoBehaviour>();
+                int disabledCount = 0;
                 foreach (var component in attackComponents)
                 {
                     if (component is BasicAttacker || component is BurstAttacker || component is SpreadAttacker || component is BossPhaseAttacker)
                     {
                         component.enabled = false;
+                        disabledCount++;
                     }
                 }
+                Debug.Log($"CircleFormation: Disabled {disabledCount} attack components");
             }
             
             Debug.Log("CircleFormation: Boss created at center");
         }
+        else
+        {
+            Debug.LogError("CircleFormation: Boss prefab is null!");
+        }
         
-        // Create enemies in circle around the boss
+
         float angleStep = 360f / enemyCount;
         
         for (int i = 0; i < enemyCount; i++)
@@ -144,8 +203,19 @@ public class CircleFormation : MonoBehaviour
             // Store initial position
             initialEnemyPositions.Add(circlePosition);
             
+            // Decide which enemy to spawn: special enemy for the first position, regular enemies for the rest
+            GameObject prefabToUse = enemyPrefab;
+            bool isSpecialEnemy = false;
+            
+            if (i == 0 && specialEnemyPrefab != null)
+            {
+                prefabToUse = specialEnemyPrefab;
+                isSpecialEnemy = true;
+                Debug.Log("CircleFormation: Spawning special invincibility drop enemy at position 0");
+            }
+            
             // Spawn enemy
-            GameObject enemy = Instantiate(enemyPrefab, transform.position + circlePosition, Quaternion.identity, transform);
+            GameObject enemy = Instantiate(prefabToUse, transform.position + circlePosition, Quaternion.identity, transform);
             
             // Set scale only if different from current scale
             if (enemy.transform.localScale != enemyScale)
@@ -161,6 +231,13 @@ public class CircleFormation : MonoBehaviour
                 if (enemyBehaviour.enemyData != null)
                 {
                     enemyBehaviour.enemyData.moveSpeed = 0f;
+                }
+                
+                // Enable power-up drops for special enemy
+                if (isSpecialEnemy)
+                {
+                    enemyBehaviour.canDropPowerUps = true;
+                    Debug.Log("CircleFormation: Enabled power-up drops for special enemy");
                 }
             }
             
@@ -321,11 +398,42 @@ public class CircleFormation : MonoBehaviour
     {
         if (bossEnemy != null)
         {
+            Debug.Log($"CircleFormation: Activating boss. Current state - Active: {bossEnemy.activeInHierarchy}, Position: {bossEnemy.transform.position}");
+            
             BossEnemy bossScript = bossEnemy.GetComponent<BossEnemy>();
             if (bossScript != null)
             {
                 bossScript.enabled = true;
-                Debug.Log("CircleFormation: BossEnemy script enabled");
+                Debug.Log($"CircleFormation: BossEnemy script enabled. Health: {bossScript.CurrentHealth}");
+                
+                // Check if boss still exists after enabling
+                if (bossEnemy == null)
+                {
+                    Debug.LogError("CircleFormation: Boss was destroyed after enabling script!");
+                    return;
+                }
+            }
+            else
+            {
+                Debug.LogError("CircleFormation: Boss script not found during activation!");
+            }
+            
+            // Check and fix sprite renderer after activation
+            SpriteRenderer bossRenderer = bossEnemy.GetComponent<SpriteRenderer>();
+            if (bossRenderer != null)
+            {
+                Debug.Log($"CircleFormation: After activation - Boss sprite: {bossRenderer.sprite != null}, Color: {bossRenderer.color}, Enabled: {bossRenderer.enabled}, SortingOrder: {bossRenderer.sortingOrder}");
+                
+                // Ensure sprite renderer is still visible after activation
+                bossRenderer.enabled = true;
+                bossRenderer.sortingOrder = 10;
+                
+                // Fix color if spawn protection made it weird
+                if (bossRenderer.color.a < 0.1f || bossRenderer.color == Color.clear)
+                {
+                    bossRenderer.color = Color.white;
+                    Debug.Log("CircleFormation: Fixed boss color after activation");
+                }
             }
             
             // Enable boss attack components
@@ -344,7 +452,7 @@ public class CircleFormation : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("CircleFormation: Cannot activate boss - bossEnemy is null!");
+            Debug.LogError("CircleFormation: Cannot activate boss - bossEnemy is null!");
         }
     }
     

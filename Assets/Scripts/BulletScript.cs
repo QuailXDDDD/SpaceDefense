@@ -14,9 +14,7 @@ public class BulletScript : MonoBehaviour
         
         if (rb != null)
         {
-            // Set gravity to 0 to prevent falling
             rb.gravityScale = 0f;
-            // Set velocity to move upward
             rb.linearVelocity = Vector2.up * speed;
         }
         
@@ -35,7 +33,6 @@ public class BulletScript : MonoBehaviour
     {
         Debug.Log($"Bullet hit: {other.name} with tag: {other.tag}");
         
-        // Ignore enemy projectiles - player bullets should pass through them
         if (other.CompareTag("EnemyProjectile") || other.CompareTag("EnemyBullet"))
         {
             Debug.Log("Player bullet ignoring enemy projectile");
@@ -46,13 +43,11 @@ public class BulletScript : MonoBehaviour
         {
             Debug.Log("Bullet hit enemy!");
             
-            // Play projectile hit sound effect
             if (AudioManager.Instance != null)
             {
                 AudioManager.Instance.PlayProjectileHit();
             }
             
-            // Try different enemy types
             FormationEnemyController formationEnemy = other.GetComponent<FormationEnemyController>();
             if (formationEnemy != null)
             {
@@ -61,7 +56,6 @@ public class BulletScript : MonoBehaviour
             }
             else
             {
-                // Try EnemyBehaviour (now has TakeDamage method)
                 EnemyBehaviour enemyBehaviour = other.GetComponent<EnemyBehaviour>();
                 if (enemyBehaviour != null)
                 {
@@ -70,7 +64,6 @@ public class BulletScript : MonoBehaviour
                 }
                 else
                 {
-                    // Try base Enemy class
                     Enemy enemyBase = other.GetComponent<Enemy>();
                     if (enemyBase != null)
                     {
@@ -79,14 +72,12 @@ public class BulletScript : MonoBehaviour
                     }
                     else
                     {
-                        // If no script found, just destroy the enemy
                         Debug.Log("No enemy script found, destroying enemy directly");
                         Destroy(other.gameObject);
                     }
                 }
             }
             
-            // Destroy the bullet
             Destroy(gameObject);
         }
         else

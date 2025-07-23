@@ -9,7 +9,7 @@ public class BossPhaseAttacker : MonoBehaviour
     private SpriteRenderer spriteRenderer;
     
     [Header("Fire Points")]
-    public Transform[] firePoints; // Multiple fire points for complex patterns
+    public Transform[] firePoints;
     
     private float nextFireTime;
     private int currentPhase = 1;
@@ -26,7 +26,6 @@ public class BossPhaseAttacker : MonoBehaviour
             return;
         }
         
-        // Get the boss data from the enemy data
         if (bossEnemy.enemyData is BossEnemyData)
         {
             bossData = (BossEnemyData)bossEnemy.enemyData;
@@ -41,7 +40,6 @@ public class BossPhaseAttacker : MonoBehaviour
     
     void Start()
     {
-        // Auto-create fire points if none exist
         if (firePoints == null || firePoints.Length == 0)
         {
             CreateDefaultFirePoints();
@@ -54,37 +52,32 @@ public class BossPhaseAttacker : MonoBehaviour
     {
         Debug.Log("BossPhaseAttacker: Creating default fire points...");
         
-        // Create 3 fire points: center, left, right
         firePoints = new Transform[3];
         
-        // Center fire point (primary) - oriented to fire downward
         GameObject centerFirePoint = new GameObject("FirePoint_Center");
         centerFirePoint.transform.SetParent(transform);
-        centerFirePoint.transform.localPosition = new Vector3(0, -0.5f, 0); // Below the boss
-        centerFirePoint.transform.localRotation = Quaternion.Euler(0, 0, 0); // Face downward
+        centerFirePoint.transform.localPosition = new Vector3(0, -0.5f, 0);
+        centerFirePoint.transform.localRotation = Quaternion.Euler(0, 0, 0);
         firePoints[0] = centerFirePoint.transform;
         
-        // Left fire point - oriented to fire downward
         GameObject leftFirePoint = new GameObject("FirePoint_Left");
         leftFirePoint.transform.SetParent(transform);
-        leftFirePoint.transform.localPosition = new Vector3(-0.8f, -0.3f, 0); // Left side
-        leftFirePoint.transform.localRotation = Quaternion.Euler(0, 0, 0); // Face downward
+        leftFirePoint.transform.localPosition = new Vector3(-0.8f, -0.3f, 0);
+        leftFirePoint.transform.localRotation = Quaternion.Euler(0, 0, 0);
         firePoints[1] = leftFirePoint.transform;
         
-        // Right fire point - oriented to fire downward
         GameObject rightFirePoint = new GameObject("FirePoint_Right");
         rightFirePoint.transform.SetParent(transform);
-        rightFirePoint.transform.localPosition = new Vector3(0.8f, -0.3f, 0); // Right side
-        rightFirePoint.transform.localRotation = Quaternion.Euler(0, 0, 0); // Face downward
+        rightFirePoint.transform.localPosition = new Vector3(0.8f, -0.3f, 0);
+        rightFirePoint.transform.localRotation = Quaternion.Euler(0, 0, 0);
         firePoints[2] = rightFirePoint.transform;
         
         Debug.Log("BossPhaseAttacker: Created 3 default fire points (Center, Left, Right)");
     }
     
-    // Public method to enable immediate shooting (called by formations)
     public void EnableImmediateShooting()
     {
-        nextFireTime = Time.time; // Allow shooting immediately
+        nextFireTime = Time.time;
     }
     
     void Update()
@@ -159,7 +152,6 @@ public class BossPhaseAttacker : MonoBehaviour
     
     private void Phase1Attack()
     {
-        // Simple single shot from primary fire point
         if (firePoints.Length > 0 && firePoints[0] != null)
         {
             FireProjectile(firePoints[0], bossData.phase1ProjectilePrefab, 
@@ -169,19 +161,16 @@ public class BossPhaseAttacker : MonoBehaviour
     
     private void Phase2Attack()
     {
-        // Burst attack from multiple fire points
         StartCoroutine(BurstAttack());
     }
     
     private void Phase3Attack()
     {
-        // Spread attack from all fire points
         SpreadAttack();
     }
     
     private IEnumerator BurstAttack()
     {
-        // Play boss shooting sound effect once for the burst sequence
         if (AudioManager.Instance != null)
         {
             AudioManager.Instance.PlayBossShoot();
@@ -193,7 +182,6 @@ public class BossPhaseAttacker : MonoBehaviour
             {
                 if (firePoint != null)
                 {
-                    // Create projectile manually to ensure correct direction
                     GameObject projectile = Instantiate(bossData.phase2ProjectilePrefab, 
                                                       firePoint.position, Quaternion.identity);
                     
@@ -202,7 +190,7 @@ public class BossPhaseAttacker : MonoBehaviour
                     {
                         projectileScript.damage = bossData.phase2ProjectileDamage;
                         projectileScript.speed = bossData.phase2ProjectileSpeed;
-                        projectileScript.SetDirection(Vector3.down); // Ensure downward direction
+                        projectileScript.SetDirection(Vector3.down);
                     }
                 }
             }
@@ -218,20 +206,17 @@ public class BossPhaseAttacker : MonoBehaviour
     {
         if (firePoints.Length == 0) return;
         
-        // Play boss shooting sound effect
         if (AudioManager.Instance != null)
         {
             AudioManager.Instance.PlayBossShoot();
         }
         
-        // Calculate spread directions (fan pattern downward)
         float angleStep = bossData.phase3SpreadAngle / (bossData.phase3SpreadCount - 1);
         float startAngle = -bossData.phase3SpreadAngle / 2f;
         
         for (int i = 0; i < bossData.phase3SpreadCount; i++)
         {
             float angle = startAngle + (angleStep * i);
-            // Create direction vector by rotating Vector3.down by the angle
             Vector3 direction = Quaternion.Euler(0, 0, angle) * Vector3.down;
             
             if (firePoints[0] != null)
@@ -256,13 +241,11 @@ public class BossPhaseAttacker : MonoBehaviour
     {
         if (projectilePrefab != null && firePoint != null)
         {
-            // Play boss shooting sound effect
             if (AudioManager.Instance != null)
             {
                 AudioManager.Instance.PlayBossShoot();
             }
             
-            // Instantiate projectile with identity rotation (no rotation)
             GameObject projectile = Instantiate(projectilePrefab, firePoint.position, Quaternion.identity);
             EnemyProjectile projectileScript = projectile.GetComponent<EnemyProjectile>();
             
@@ -270,7 +253,6 @@ public class BossPhaseAttacker : MonoBehaviour
             {
                 projectileScript.damage = damage;
                 projectileScript.speed = speed;
-                // Ensure it fires downward (default direction in EnemyProjectile is Vector3.down)
                 projectileScript.SetDirection(Vector3.down);
             }
         }

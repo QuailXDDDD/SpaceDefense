@@ -14,42 +14,63 @@ public class WaveManager : MonoBehaviour
     public float wave1EnemySpacing = 2f;
     public float wave1MoveSpeed = 2f;
     
-    [Header("Wave 2 - ZigZag Formation")]
+    [Header("Wave 2 - Grid Formation")]
     public GameObject wave2EnemyPrefab;
-    public int wave2Rows = 4;
-    public int wave2Cols = 6;
-    public float wave2Spacing = 1f;
+    public int wave2Rows = 2;
+    public int wave2Cols = 5;
+    public float wave2Spacing = 1.5f;
     public float wave2MoveSpeed = 2f;
     
-    [Header("Wave 3 - Circle Formation")]
+    [Header("Wave 3 - ZigZag Formation")]
     public GameObject wave3EnemyPrefab;
+    public int wave3Rows = 4;
+    public int wave3Cols = 6;
+    public float wave3Spacing = 1f;
+    public float wave3MoveSpeed = 2f;
+    
+    [Header("Wave 4 - Circle Formation")]
+    public GameObject wave4EnemyPrefab;
+    public GameObject wave4SpecialEnemyPrefab;
     public GameObject bossPrefab;
-    public int wave3EnemyCount = 5;
-    public float wave3CircleRadius = 3f;
-    public float wave3RotationSpeed = 30f; // degrees per second
-    public float wave3MoveSpeed = 1f;
+    public int wave4EnemyCount = 5;
+    public float wave4CircleRadius = 3f;
+    public float wave4RotationSpeed = 30f;
+    public float wave4MoveSpeed = 1f;
     
     [Header("Current Wave Info")]
     public int currentWave = 0;
     public bool waveInProgress = false;
     
-    // References to active formations
     private GameObject currentFormation;
-    public List<GameObject> activeEnemies = new List<GameObject>(); // Public for UI access
+    public List<GameObject> activeEnemies = new List<GameObject>();
     
-    // Public events for other systems to listen to
     public static System.Action<int> OnWaveStarted;
     public static System.Action<int> OnWaveCompleted;
     public static System.Action OnAllWavesCompleted;
     
+    private bool playerReady = false;
+    
     void Start()
     {
+        PlayerShip.OnPlayerReady += OnPlayerReady;
+        
+        Debug.Log("WaveManager: Waiting for player ship to complete entrance sequence...");
+    }
+    
+    void OnDestroy()
+    {
+        PlayerShip.OnPlayerReady -= OnPlayerReady;
+    }
+    
+    void OnPlayerReady()
+    {
+        Debug.Log("WaveManager: Player ship is ready! Starting wave sequence...");
+        playerReady = true;
         StartCoroutine(StartWaveSequence());
     }
     
     void Update()
     {
-        // Check if current wave is completed (but wait a bit for enemies to properly spawn)
         if (waveInProgress && Time.time > waveStartTime + 1f && IsCurrentWaveCleared())
         {
             CompleteCurrentWave();
@@ -60,20 +81,24 @@ public class WaveManager : MonoBehaviour
     
     IEnumerator StartWaveSequence()
     {
-        yield return new WaitForSeconds(1f); // Initial delay
+        if (!playerReady)
+        {
+            Debug.LogWarning("WaveManager: Attempted to start waves before player is ready!");
+            yield break;
+        }
         
-        for (int wave = 1; wave <= 3; wave++)
+        yield return new WaitForSeconds(2f);
+        
+        for (int wave = 1; wave <= 4; wave++)
         {
             yield return StartCoroutine(SpawnWave(wave));
             
-            // Wait for wave to be cleared
             while (waveInProgress)
             {
                 yield return null;
             }
             
-            // Delay between waves (except after last wave)
-            if (wave < 3)
+            if (wave < 4)
             {
                 yield return new WaitForSeconds(delayBetweenWaves);
             }
@@ -90,7 +115,6 @@ public class WaveManager : MonoBehaviour
         waveStartTime = Time.time;
         activeEnemies.Clear();
         
-        // Ensure player can shoot during wave transitions
         EnsurePlayerCanShoot();
         
         Debug.Log($"Starting Wave {waveNumber}");
@@ -102,10 +126,13 @@ public class WaveManager : MonoBehaviour
                 yield return StartCoroutine(SpawnWave1_StraightRow());
                 break;
             case 2:
-                yield return StartCoroutine(SpawnWave2_ZigZag());
+                yield return StartCoroutine(SpawnWave2_Grid());
                 break;
             case 3:
-                yield return StartCoroutine(SpawnWave3_Circle());
+                yield return StartCoroutine(SpawnWave3_ZigZag());
+                break;
+            case 4:
+                yield return StartCoroutine(SpawnWave4_Circle());
                 break;
         }
     }
@@ -114,25 +141,21 @@ public class WaveManager : MonoBehaviour
     {
         Debug.Log("WaveManager: Creating Wave 1 - Straight Row Formation");
         
-        // Check if prefab is assigned
         if (wave1EnemyPrefab == null)
         {
             Debug.LogError("WaveManager: Wave 1 Enemy Prefab is not assigned!");
             yield break;
         }
         
-        // Create formation container
         currentFormation = new GameObject("Wave1_StraightRow");
         currentFormation.transform.position = offScreenSpawnPosition;
         
-        // Ensure formation container doesn't interfere with player bullets
         Collider2D formationCollider = currentFormation.GetComponent<Collider2D>();
         if (formationCollider != null)
         {
             Destroy(formationCollider);
         }
         
-        // Add StraightRowFormation component
         StraightRowFormation formation = currentFormation.AddComponent<StraightRowFormation>();
         formation.enemyPrefab = wave1EnemyPrefab;
         formation.enemyCount = wave1EnemyCount;
@@ -141,10 +164,8 @@ public class WaveManager : MonoBehaviour
         
         Debug.Log($"WaveManager: Formation component added, waiting for enemies to spawn...");
         
-        // Wait longer for the formation to initialize and spawn enemies
         yield return new WaitForSeconds(0.1f);
         
-        // Wait until enemies are actually spawned
         float timeout = 5f;
         float elapsed = 0f;
         while (currentFormation.transform.childCount == 0 && elapsed < timeout)
@@ -159,7 +180,6 @@ public class WaveManager : MonoBehaviour
             yield break;
         }
         
-        // Get references to all spawned enemies
         for (int i = 0; i < currentFormation.transform.childCount; i++)
         {
             activeEnemies.Add(currentFormation.transform.GetChild(i).gameObject);
@@ -168,9 +188,9 @@ public class WaveManager : MonoBehaviour
         Debug.Log($"WaveManager: Wave 1 spawned {activeEnemies.Count} enemies successfully");
     }
     
-    IEnumerator SpawnWave2_ZigZag()
+    IEnumerator SpawnWave2_Grid()
     {
-        Debug.Log("WaveManager: Creating Wave 2 - ZigZag Formation");
+        Debug.Log("WaveManager: Creating Wave 2 - Grid Formation");
         
         // Check if prefab is assigned
         if (wave2EnemyPrefab == null)
@@ -180,7 +200,7 @@ public class WaveManager : MonoBehaviour
         }
         
         // Create formation container
-        currentFormation = new GameObject("Wave2_ZigZag");
+        currentFormation = new GameObject("Wave2_Grid");
         currentFormation.transform.position = offScreenSpawnPosition;
         
         // Ensure formation container doesn't interfere with player bullets
@@ -190,17 +210,17 @@ public class WaveManager : MonoBehaviour
             Destroy(formationCollider);
         }
         
-        // Add ZigZagFormation component
-        ZigZagFormation1 formation = currentFormation.AddComponent<ZigZagFormation1>();
+        // Add GridFormation component
+        GridFormation formation = currentFormation.AddComponent<GridFormation>();
         formation.enemyPrefab = wave2EnemyPrefab;
         formation.rows = wave2Rows;
         formation.cols = wave2Cols;
         formation.spacing = wave2Spacing;
         formation.moveSpeed = wave2MoveSpeed;
-        formation.stayInPosition = true; // Stay at target position for zigzag movement
-        formation.spawnFromOffScreen = true; // Enable off-screen spawning
+        formation.stayInPosition = true;
+        formation.spawnFromOffScreen = true;
         
-        Debug.Log($"WaveManager: ZigZag formation component added, waiting for enemies to spawn...");
+        Debug.Log($"WaveManager: Grid formation component added, waiting for enemies to spawn...");
         
         // Wait longer for the formation to initialize and spawn enemies
         yield return new WaitForSeconds(0.1f);
@@ -208,7 +228,8 @@ public class WaveManager : MonoBehaviour
         // Wait until enemies are actually spawned
         float timeout = 5f;
         float elapsed = 0f;
-        while (currentFormation.transform.childCount == 0 && elapsed < timeout)
+        int expectedCount = wave2Rows * wave2Cols;
+        while (currentFormation.transform.childCount < expectedCount && elapsed < timeout)
         {
             elapsed += Time.deltaTime;
             yield return null;
@@ -229,14 +250,75 @@ public class WaveManager : MonoBehaviour
         Debug.Log($"WaveManager: Wave 2 spawned {activeEnemies.Count} enemies successfully");
     }
     
-    IEnumerator SpawnWave3_Circle()
+    IEnumerator SpawnWave3_ZigZag()
     {
-        Debug.Log("WaveManager: Creating Wave 3 - Circle Formation with Boss");
+        Debug.Log("WaveManager: Creating Wave 3 - ZigZag Formation");
         
-        // Check if prefabs are assigned
+        // Check if prefab is assigned
         if (wave3EnemyPrefab == null)
         {
             Debug.LogError("WaveManager: Wave 3 Enemy Prefab is not assigned!");
+            yield break;
+        }
+        
+        // Create formation container
+        currentFormation = new GameObject("Wave3_ZigZag");
+        currentFormation.transform.position = offScreenSpawnPosition;
+        
+        // Ensure formation container doesn't interfere with player bullets
+        Collider2D formationCollider = currentFormation.GetComponent<Collider2D>();
+        if (formationCollider != null)
+        {
+            Destroy(formationCollider);
+        }
+        
+        // Add ZigZagFormation component
+        ZigZagFormation1 formation = currentFormation.AddComponent<ZigZagFormation1>();
+        formation.enemyPrefab = wave3EnemyPrefab;
+        formation.rows = wave3Rows;
+        formation.cols = wave3Cols;
+        formation.spacing = wave3Spacing;
+        formation.moveSpeed = wave3MoveSpeed;
+        formation.stayInPosition = true;
+        formation.spawnFromOffScreen = true;
+        
+        Debug.Log($"WaveManager: ZigZag formation component added, waiting for enemies to spawn...");
+        
+        // Wait longer for the formation to initialize and spawn enemies
+        yield return new WaitForSeconds(0.1f);
+        
+        // Wait until enemies are actually spawned
+        float timeout = 5f;
+        float elapsed = 0f;
+        while (currentFormation.transform.childCount == 0 && elapsed < timeout)
+        {
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+        
+        if (currentFormation.transform.childCount == 0)
+        {
+            Debug.LogError("WaveManager: No enemies spawned for Wave 3! Check enemy prefab assignment and formation script.");
+            yield break;
+        }
+        
+        // Get references to all spawned enemies
+        for (int i = 0; i < currentFormation.transform.childCount; i++)
+        {
+            activeEnemies.Add(currentFormation.transform.GetChild(i).gameObject);
+        }
+        
+        Debug.Log($"WaveManager: Wave 3 spawned {activeEnemies.Count} enemies successfully");
+    }
+    
+    IEnumerator SpawnWave4_Circle()
+    {
+        Debug.Log("WaveManager: Creating Wave 4 - Circle Formation with Boss");
+        
+        // Check if prefabs are assigned
+        if (wave4EnemyPrefab == null)
+        {
+            Debug.LogError("WaveManager: Wave 4 Enemy Prefab is not assigned!");
             yield break;
         }
         
@@ -247,7 +329,7 @@ public class WaveManager : MonoBehaviour
         }
         
         // Create formation container
-        currentFormation = new GameObject("Wave3_Circle");
+        currentFormation = new GameObject("Wave4_Circle");
         currentFormation.transform.position = offScreenSpawnPosition;
         
         // Ensure formation container doesn't interfere with player bullets
@@ -259,14 +341,15 @@ public class WaveManager : MonoBehaviour
         
         // Add CircleFormation component
         CircleFormation formation = currentFormation.AddComponent<CircleFormation>();
-        formation.enemyPrefab = wave3EnemyPrefab;
+        formation.enemyPrefab = wave4EnemyPrefab;
+        formation.specialEnemyPrefab = wave4SpecialEnemyPrefab;
         formation.bossPrefab = bossPrefab;
-        formation.enemyCount = wave3EnemyCount;
-        formation.circleRadius = wave3CircleRadius;
-        formation.rotationSpeed = wave3RotationSpeed;
-        formation.moveSpeed = wave3MoveSpeed;
-        formation.stayInPosition = true; // Stay at target position for circular rotation
-        formation.spawnFromOffScreen = true; // Enable off-screen spawning
+        formation.enemyCount = wave4EnemyCount;
+        formation.circleRadius = wave4CircleRadius;
+        formation.rotationSpeed = wave4RotationSpeed;
+        formation.moveSpeed = wave4MoveSpeed;
+        formation.stayInPosition = true;
+        formation.spawnFromOffScreen = true;
         
         Debug.Log($"WaveManager: Circle formation component added, waiting for enemies and boss to spawn...");
         
@@ -276,7 +359,7 @@ public class WaveManager : MonoBehaviour
         // Wait until enemies are actually spawned (should be enemies + boss)
         float timeout = 5f;
         float elapsed = 0f;
-        int expectedCount = wave3EnemyCount + 1; // enemies + boss
+        int expectedCount = wave4EnemyCount + 1;
         while (currentFormation.transform.childCount < expectedCount && elapsed < timeout)
         {
             elapsed += Time.deltaTime;
@@ -285,22 +368,20 @@ public class WaveManager : MonoBehaviour
         
         if (currentFormation.transform.childCount == 0)
         {
-            Debug.LogError("WaveManager: No enemies or boss spawned for Wave 3! Check prefab assignments and formation script.");
+            Debug.LogError("WaveManager: No enemies or boss spawned for Wave 4! Check prefab assignments and formation script.");
             yield break;
         }
         
-        // Get references to all spawned enemies (including boss)
         for (int i = 0; i < currentFormation.transform.childCount; i++)
         {
             activeEnemies.Add(currentFormation.transform.GetChild(i).gameObject);
         }
         
-        Debug.Log($"WaveManager: Wave 3 spawned {activeEnemies.Count} enemies and boss successfully");
+        Debug.Log($"WaveManager: Wave 4 spawned {activeEnemies.Count} enemies and boss successfully");
     }
     
     bool IsCurrentWaveCleared()
     {
-        // Remove null references (destroyed enemies)
         int beforeCount = activeEnemies.Count;
         activeEnemies.RemoveAll(enemy => enemy == null);
         int afterCount = activeEnemies.Count;
@@ -319,17 +400,15 @@ public class WaveManager : MonoBehaviour
         Debug.Log($"Wave {currentWave} completed!");
         OnWaveCompleted?.Invoke(currentWave);
         
-        // Clean up formation object
         if (currentFormation != null)
         {
             Destroy(currentFormation);
         }
     }
     
-    // Public methods for external control
     public void StartNextWave()
     {
-        if (!waveInProgress && currentWave < 3)
+        if (!waveInProgress && currentWave < 4)
         {
             StartCoroutine(SpawnWave(currentWave + 1));
         }
@@ -339,13 +418,11 @@ public class WaveManager : MonoBehaviour
     {
         StopAllCoroutines();
         
-        // Clean up current formation
         if (currentFormation != null)
         {
             Destroy(currentFormation);
         }
         
-        // Clear active enemies
         foreach (GameObject enemy in activeEnemies)
         {
             if (enemy != null)
@@ -358,18 +435,16 @@ public class WaveManager : MonoBehaviour
         currentWave = 0;
         waveInProgress = false;
         
-        // Restart wave sequence
         StartCoroutine(StartWaveSequence());
     }
     
-    // Utility method to get current wave info
     public string GetWaveInfo()
     {
         if (waveInProgress)
         {
             return $"Wave {currentWave} - Enemies Remaining: {activeEnemies.Count}";
         }
-        else if (currentWave >= 3)
+        else if (currentWave >= 4)
         {
             return "All waves completed!";
         }
@@ -379,13 +454,11 @@ public class WaveManager : MonoBehaviour
         }
     }
     
-    // Ensure player can shoot during wave transitions
     void EnsurePlayerCanShoot()
     {
         PlayerShip player = FindFirstObjectByType<PlayerShip>();
         if (player != null)
         {
-            // Make sure player is not disabled or blocked
             player.enabled = true;
             Debug.Log("WaveManager: Ensured player can shoot during wave transition");
         }

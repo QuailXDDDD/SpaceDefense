@@ -10,9 +10,9 @@ public class BurstAttacker : MonoBehaviour
     private float projectileSpeed;
 
     public Transform firePoint;
-    public int burstCount = 3; // How many projectiles in a burst
-    public float burstDelay = 0.1f; // Delay between projectiles in a burst
-    public float cooldownAfterBurst = 2f; // Cooldown before next burst sequence
+    public int burstCount = 3;
+    public float burstDelay = 0.1f;
+    public float cooldownAfterBurst = 2f;
 
     private float nextBurstTime;
 
@@ -42,13 +42,12 @@ public class BurstAttacker : MonoBehaviour
 
     void Start()
     {
-        nextBurstTime = Time.time + cooldownAfterBurst; // Initial delay
+        nextBurstTime = Time.time + cooldownAfterBurst;
     }
 
-    // Public method to enable immediate shooting (called by formations)
     public void EnableImmediateShooting()
     {
-        nextBurstTime = Time.time; // Allow shooting immediately
+        nextBurstTime = Time.time;
     }
 
     void Update()
@@ -62,7 +61,6 @@ public class BurstAttacker : MonoBehaviour
 
     IEnumerator FireBurst()
     {
-        // Play shooting sound effect once for the burst
         if (AudioManager.Instance != null)
         {
             AudioManager.Instance.PlayEnemyShoot();

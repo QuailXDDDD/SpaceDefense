@@ -63,28 +63,36 @@
   <ItemGroup>
     <Compile Include="Assets\Inguz Media Studio\Free 2D Impact FX\Script\AnimationHelper.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\TMP_TextEventHandler.cs" />
+    <Compile Include="Assets\Scripts\LeaderboardTableUI.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\EnvMapAnimator.cs" />
+    <Compile Include="Assets\Scripts\VictorySceneManager.cs" />
     <Compile Include="Assets\Scripts\EnemyMover.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\TMP_TextSelector_A.cs" />
+    <Compile Include="Assets\Scripts\LeaderboardManager.cs" />
+    <Compile Include="Assets\Scripts\LeaderboardSceneManager.cs" />
+    <Compile Include="Assets\Scripts\GameOverManager.cs" />
     <Compile Include="Assets\Scripts\SkullFormation.cs" />
-    <Compile Include="Assets\Scripts\BossEnemySetupGuide.cs" />
+    <Compile Include="Assets\Scripts\GridFormation.cs" />
     <Compile Include="Assets\Scripts\DestroyOverTime.cs" />
+    <Compile Include="Assets\Scripts\GameUI.cs" />
+    <Compile Include="Assets\Scripts\SimplePowerUp.cs" />
     <Compile Include="Assets\Scripts\WaveUI.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\Benchmark02.cs" />
     <Compile Include="Assets\Scripts\WaveDebugger.cs" />
     <Compile Include="Assets\Scripts\StraightRowFormation.cs" />
     <Compile Include="Assets\Scripts\BossPhaseAttacker.cs" />
+    <Compile Include="Assets\Scripts\StartScreenManager.cs" />
     <Compile Include="Assets\Scripts\AudioManager.cs" />
+    <Compile Include="Assets\Scripts\InvincibilityPowerUp.cs" />
     <Compile Include="Assets\Scripts\SpreadAttacker.cs" />
     <Compile Include="Assets\Scripts\BossSpecialAbilities.cs" />
-    <Compile Include="Assets\Scripts\QuickWaveTest.cs" />
     <Compile Include="Assets\Scripts\BasicAttacker.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\TMP_ExampleScript_01.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\TMPro_InstructionOverlay.cs" />
     <Compile Include="Assets\Scripts\Enemy.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\VertexShakeB.cs" />
+    <Compile Include="Assets\Scripts\NameEntrySceneManager.cs" />
     <Compile Include="Assets\HealthHeartSystem\Scripts\HealthBarController.cs" />
-    <Compile Include="Assets\Scripts\AudioManagerSetup.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\VertexJitter.cs" />
     <Compile Include="Assets\Scripts\WaveManager.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\TMP_UiFrameRateCounter.cs" />
@@ -96,6 +104,7 @@
     <Compile Include="Assets\Scripts\EnemyProjectile.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\ShaderPropAnimator.cs" />
     <Compile Include="Assets\HealthHeartSystem\Scripts\PlayerStats.cs" />
+    <Compile Include="Assets\Scripts\LeaderboardEntry.cs" />
     <Compile Include="Assets\Scripts\PlayerShip.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\TMP_TextInfoDebugTool.cs" />
     <Compile Include="Assets\Scripts\BulletScript.cs" />
@@ -111,17 +120,16 @@
     <Compile Include="Assets\Scripts\FormationEnemyController.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\Benchmark01.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\TextMeshSpawner.cs" />
-    <Compile Include="Assets\Scripts\AudioManagerPrefabCreator.cs" />
     <Compile Include="Assets\HealthHeartSystem\Scripts\HealthBarHUDTester.cs" />
     <Compile Include="Assets\Scripts\CircleFormation.cs" />
     <Compile Include="Assets\Scripts\ScrollingBackGround.cs" />
-    <Compile Include="Assets\Scripts\HeartUI_README.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\CameraController.cs" />
     <Compile Include="Assets\Scripts\EnemyData.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\Benchmark03.cs" />
     <Compile Include="Assets\Inguz Media Studio\Free 2D Impact FX\Script\SelfDestruct.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\DropdownSample.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\VertexColorCycler.cs" />
+    <Compile Include="Assets\Scripts\GameOverSceneManager.cs" />
     <Compile Include="Assets\Inguz Media Studio\Free 2D Impact FX\Demo Scene\DemoManager.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\ObjectSpin.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\TMP_PhoneNumberValidator.cs" />
@@ -131,10 +139,12 @@
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\TeleType.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\TMP_TextEventCheck.cs" />
     <Compile Include="Assets\Scripts\EnemyBehaviour.cs" />
+    <Compile Include="Assets\Scripts\LeaderboardRowUI.cs" />
     <Compile Include="Assets\Scripts\WaveSystemSetupGuide.cs" />
     <Compile Include="Assets\Scripts\HeartUI.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\TextMeshProFloatingText.cs" />
     <Compile Include="Assets\Scripts\ExplodingProjectile.cs" />
+    <Compile Include="Assets\Scripts\LeaderboardUI.cs" />
     <Compile Include="Assets\Scripts\BossEnemyData.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -151,7 +161,6 @@
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF SSD.shader" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Surface-Mobile.shader" />
     <None Include="Assets\TextMesh Pro\Shaders\SDFFunctions.hlsl" />
-    <None Include="Assets\Pixel Font - Tripfive\_README.txt" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Surface.shader" />
     <None Include="Assets\TextMesh Pro\Sprites\EmojiOne Attribution.txt" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_Bitmap-Custom-Atlas.shader" />

@@ -2,19 +2,24 @@ using UnityEngine;
 
 public class EnemyBehaviour : MonoBehaviour
 {
-    // Reference to the ScriptableObject holding this enemy's data
     public EnemyData enemyData;
     
     [Header("Effects")]
-    public GameObject explosionPrefab; // Assign explosion effect prefab here
+    public GameObject explosionPrefab;
+    
+    [Header("Spawn Protection")]
+    public float spawnInvincibilityDuration = 5f;
+    public bool hasSpawnProtection = true;
 
     private int currentHealth;
     private float nextFireTime;
     private SpriteRenderer spriteRenderer;
+    private bool isSpawnInvincible = false;
+    private Coroutine spawnProtectionCoroutine;
+    private Color originalColor;
 
     void Awake()
     {
-        // Get the SpriteRenderer component
         spriteRenderer = GetComponent<SpriteRenderer>();
     }
 
@@ -24,7 +29,6 @@ public class EnemyBehaviour : MonoBehaviour
         {
             Debug.LogWarning("EnemyData is not assigned to " + gameObject.name + "! Trying to find one...", this);
             
-            // Try to find EnemyData from other enemy components
             Enemy enemyComponent = GetComponent<Enemy>();
             if (enemyComponent != null && enemyComponent.enemyData != null)
             {
@@ -33,7 +37,6 @@ public class EnemyBehaviour : MonoBehaviour
             }
             else
             {
-                // Last resort - load a basic enemy data asset
                 EnemyData[] allEnemyData = Resources.FindObjectsOfTypeAll<EnemyData>();
                 if (allEnemyData.Length > 0)
                 {
@@ -49,80 +52,79 @@ public class EnemyBehaviour : MonoBehaviour
             }
         }
 
-        // Initialize current health from the ScriptableObject's max health
         currentHealth = enemyData.maxHealth;
 
-        // Apply visual properties from EnemyData
         if (spriteRenderer != null && enemyData.enemySprite != null)
         {
             spriteRenderer.sprite = enemyData.enemySprite;
         }
         transform.localScale = enemyData.scale;
 
-        // Set the initial fire time (e.g., shoot immediately or after a short delay)
+        if (spriteRenderer != null)
+        {
+            originalColor = spriteRenderer.color;
+        }
+
         nextFireTime = Time.time + enemyData.baseFireRate;
+        
+        if (hasSpawnProtection)
+        {
+            StartSpawnProtection();
+        }
     }
 
-    // Public method to enable immediate shooting (called by formations)
     public void EnableImmediateShooting()
     {
-        nextFireTime = Time.time; // Allow shooting immediately
+        nextFireTime = Time.time;
     }
     
     void Update()
     {
-        // --- Movement Logic ---
-        // Only move if not part of a formation (formation handles movement)
         bool isPartOfFormation = transform.parent != null && 
                                 (transform.parent.GetComponent<ZigZagFormation1>() != null || 
-                                 transform.parent.GetComponent<SkullFormation>() != null);
+                                 transform.parent.GetComponent<SkullFormation>() != null ||
+                                 transform.parent.GetComponent<GridFormation>() != null);
         
         if (!isPartOfFormation)
         {
-            // Move the enemy straight down
             transform.Translate(Vector2.down * enemyData.moveSpeed * Time.deltaTime);
         }
 
-        // --- Shooting Logic ---
-        // Check if it's time to shoot and if a projectile prefab is assigned
         if (Time.time >= nextFireTime && enemyData.projectilePrefab != null)
         {
             Shoot();
-            // Set the next time the enemy can fire
             nextFireTime = Time.time + enemyData.baseFireRate;
         }
     }
 
-    // Handles the enemy shooting a projectile
     void Shoot()
     {
-        // Play shooting sound effect
         if (AudioManager.Instance != null)
         {
             AudioManager.Instance.PlayEnemyShoot();
         }
         
-        // Instantiate the projectile prefab at the enemy's position
         GameObject projectileGO = Instantiate(enemyData.projectilePrefab, transform.position, Quaternion.identity);
 
-        // Get the projectile script (assuming it has one, e.g., EnemyProjectile.cs)
-        // And pass relevant data if needed, like damage and speed
         EnemyProjectile enemyProjectile = projectileGO.GetComponent<EnemyProjectile>();
         if (enemyProjectile != null)
         {
-            // Directly set properties since EnemyProjectile no longer has SetProjectileProperties
             enemyProjectile.damage = enemyData.projectileDamage;
             enemyProjectile.speed = enemyData.projectileSpeed;
         }
     }
 
-    // Public method to take damage, called by player bullets
     public void TakeDamage(int damageAmount)
     {
+        if (isSpawnInvincible)
+        {
+            Debug.Log($"Enemy {gameObject.name} is protected by spawn invincibility! Damage blocked.");
+            return;
+        }
+        
         currentHealth -= damageAmount;
         Debug.Log($"{enemyData.enemyName} took {damageAmount} damage. Current Health: {currentHealth}");
         
-        // Play hit sound effect
         if (AudioManager.Instance != null)
         {
             AudioManager.Instance.PlayEnemyHit();
@@ -130,30 +132,37 @@ public class EnemyBehaviour : MonoBehaviour
 
         if (currentHealth <= 0)
         {
-            // Play explosion sound effect
             if (AudioManager.Instance != null)
             {
                 AudioManager.Instance.PlayEnemyExplosion();
             }
             
-            // Create explosion effect
             if (explosionPrefab != null)
             {
                 Instantiate(explosionPrefab, transform.position, Quaternion.identity);
             }
             
+            TryDropPowerUp();
+            
+            GameObject canvasObject = GameObject.Find("Canvas");
+            if (canvasObject != null)
+            {
+                GameUI gameUI = canvasObject.GetComponent<GameUI>();
+                if (gameUI != null)
+                {
+                    gameUI.AddScore(enemyData.scoreValue);
+                }
+            }
+            
             Debug.Log($"{enemyData.enemyName} destroyed! Score added: {enemyData.scoreValue}");
-            Destroy(gameObject); // Destroy the enemy GameObject
+            Destroy(gameObject);
         }
     }
 
-    // Handles collisions when 'Is Trigger' is checked on the Collider2D
     void OnTriggerEnter2D(Collider2D other)
     {
-        // Check if the collider belongs to a PlayerBullet
         if (other.CompareTag("PlayerBullet"))
         {
-            // Get the BulletScript to retrieve its damage amount
             BulletScript bulletScript = other.GetComponent<BulletScript>();
             if (bulletScript != null)
             {
@@ -161,32 +170,34 @@ public class EnemyBehaviour : MonoBehaviour
             }
             else
             {
-                // Default damage if no script found
                 TakeDamage(10);
             }
             
-            // Destroy the player bullet after it hits the enemy
             Destroy(other.gameObject);
         }
-        // You might add logic for collision with Player here if not using physics collisions
-        // else if (other.CompareTag("Player"))
-        // {
-        //      // Deal damage to player, destroy enemy, etc.
-        // }
     }
 
     // Destroy enemy if it moves off-screen
     void OnBecameInvisible()
     {
+        // NEVER destroy bosses - they should be managed by their own scripts
+        BossEnemy bossComponent = GetComponent<BossEnemy>();
+        if (bossComponent != null)
+        {
+            Debug.Log($"EnemyBehaviour: {gameObject.name} is a boss, not destroying on invisible");
+            return;
+        }
+        
         // Don't destroy if this enemy is part of a formation that's still entering the screen
         if (transform.parent != null)
         {
             StraightRowFormation straightFormation = transform.parent.GetComponent<StraightRowFormation>();
             ZigZagFormation1 zigzagFormation = transform.parent.GetComponent<ZigZagFormation1>();
             CircleFormation circleFormation = transform.parent.GetComponent<CircleFormation>();
+            GridFormation gridFormation = transform.parent.GetComponent<GridFormation>();
             
             // If part of any formation, let the formation handle destruction
-            if (straightFormation != null || zigzagFormation != null || circleFormation != null)
+            if (straightFormation != null || zigzagFormation != null || circleFormation != null || gridFormation != null)
             {
                 Debug.Log($"EnemyBehaviour: {gameObject.name} is part of formation, not destroying on invisible");
                 return;
@@ -200,5 +211,150 @@ public class EnemyBehaviour : MonoBehaviour
             Debug.Log($"EnemyBehaviour: {gameObject.name} destroyed for being off-screen (y: {transform.position.y})");
             Destroy(gameObject);
         }
+    }
+    
+    [Header("Power-Up Drops")]
+    public bool canDropPowerUps = false; // Enable this for enemies that should drop power-ups
+    public GameObject invincibilityPowerUpPrefab;
+    
+    [Header("Drop Rates")]
+    [Range(0f, 1f)]
+    public float invincibilityDropChance = 0.30f; // 30% chance for special enemies
+    
+    private void TryDropPowerUp()
+    {
+        // Only drop power-ups if this enemy type is configured to do so
+        if (!canDropPowerUps)
+        {
+            return;
+        }
+        
+        float randomValue = Random.Range(0f, 1f);
+        Vector3 dropPosition = transform.position + Vector3.up * 0.5f;
+        
+        if (randomValue <= invincibilityDropChance)
+        {
+            if (invincibilityPowerUpPrefab != null)
+            {
+                Instantiate(invincibilityPowerUpPrefab, dropPosition, Quaternion.identity);
+                Debug.Log("EnemyBehaviour: Dropped Invincibility Power-Up (Prefab)");
+            }
+            else
+            {
+                // Fallback: create power-up manually
+                CreateInvincibilityPowerUpFallback(dropPosition);
+            }
+        }
+    }
+    
+    private void CreateInvincibilityPowerUpFallback(Vector3 position)
+    {
+        GameObject powerUp = new GameObject("InvincibilityPowerUp_Fallback");
+        powerUp.transform.position = position;
+        powerUp.tag = "PowerUp";
+        
+        // Add bright, visible sprite
+        SpriteRenderer sr = powerUp.AddComponent<SpriteRenderer>();
+        sr.color = Color.cyan;
+        sr.sortingOrder = 5;
+        
+        // Create bright cyan square
+        Texture2D texture = new Texture2D(32, 32);
+        for (int x = 0; x < 32; x++)
+        {
+            for (int y = 0; y < 32; y++)
+            {
+                texture.SetPixel(x, y, Color.cyan);
+            }
+        }
+        texture.Apply();
+        sr.sprite = Sprite.Create(texture, new Rect(0, 0, 32, 32), new Vector2(0.5f, 0.5f));
+        
+        // Add collider
+        CircleCollider2D col = powerUp.AddComponent<CircleCollider2D>();
+        col.isTrigger = true;
+        
+        // Add power-up behavior
+        powerUp.AddComponent<SimplePowerUp>().powerUpType = "Invincibility";
+        
+        Debug.Log("EnemyBehaviour: Created fallback Invincibility Power-Up");
+    }
+    
+    // Spawn Protection Methods
+    private void StartSpawnProtection()
+    {
+        isSpawnInvincible = true;
+        spawnProtectionCoroutine = StartCoroutine(SpawnProtectionCoroutine());
+        
+        // Backup safety mechanism - force remove protection after duration + 1 second
+        Invoke(nameof(ForceRemoveProtection), spawnInvincibilityDuration + 1f);
+        
+        Debug.Log($"Enemy {gameObject.name} spawn protection activated for {spawnInvincibilityDuration} seconds");
+    }
+    
+    private void ForceRemoveProtection()
+    {
+        if (isSpawnInvincible)
+        {
+            Debug.Log($"Enemy {gameObject.name} FORCED protection removal (backup safety)");
+            RemoveSpawnProtection();
+        }
+    }
+    
+    System.Collections.IEnumerator SpawnProtectionCoroutine()
+    {
+        float endTime = Time.time + spawnInvincibilityDuration;
+        bool isFlashing = false;
+        
+        Debug.Log($"Enemy {gameObject.name} protection will end at time: {endTime}, current time: {Time.time}");
+        
+        while (Time.time < endTime)
+        {
+            // Flash between normal and protected color (light blue tint)
+            if (spriteRenderer != null)
+            {
+                isFlashing = !isFlashing;
+                if (isFlashing)
+                {
+                    spriteRenderer.color = new Color(originalColor.r * 0.7f, originalColor.g * 0.9f, originalColor.b * 1.2f, originalColor.a);
+                }
+                else
+                {
+                    spriteRenderer.color = originalColor;
+                }
+            }
+            
+            yield return new WaitForSeconds(0.1f); // Flash every 0.1 seconds
+        }
+        
+        // Restore original color and remove protection
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.color = originalColor;
+        }
+        
+        isSpawnInvincible = false;
+        Debug.Log($"Enemy {gameObject.name} spawn protection expired at time: {Time.time}");
+    }
+    
+    // Public method to manually remove spawn protection (if needed)
+    public void RemoveSpawnProtection()
+    {
+        if (spawnProtectionCoroutine != null)
+        {
+            StopCoroutine(spawnProtectionCoroutine);
+            spawnProtectionCoroutine = null;
+        }
+        
+        // Cancel the backup safety invoke
+        CancelInvoke(nameof(ForceRemoveProtection));
+        
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.color = originalColor;
+        }
+        
+        isSpawnInvincible = false;
+        Debug.Log($"Enemy {gameObject.name} spawn protection manually removed");
     }
 }

@@ -52,7 +52,6 @@ public class BossSpecialAbilities : MonoBehaviour
     
     void Start()
     {
-        // Start ability cooldowns
         if (bossData.hasShieldAbility)
         {
             StartCoroutine(ShieldCooldown());
@@ -66,7 +65,6 @@ public class BossSpecialAbilities : MonoBehaviour
     
     void Update()
     {
-        // Check for ability activation based on health or other conditions
         CheckAbilityConditions();
     }
     
@@ -74,13 +72,11 @@ public class BossSpecialAbilities : MonoBehaviour
     {
         float healthRatio = (float)bossEnemy.CurrentHealth / bossData.maxHealth;
         
-        // Activate shield when health is low
         if (bossData.hasShieldAbility && canUseShield && healthRatio <= 0.3f && !isShieldActive)
         {
             ActivateShield();
         }
         
-        // Teleport when health is very low
         if (bossData.hasTeleportAbility && canUseTeleport && healthRatio <= 0.2f)
         {
             Teleport();
@@ -94,7 +90,6 @@ public class BossSpecialAbilities : MonoBehaviour
         isShieldActive = true;
         canUseShield = false;
         
-        // Visual effect
         if (shieldEffect != null)
         {
             Instantiate(shieldEffect, transform.position, transform.rotation, transform);
@@ -107,7 +102,6 @@ public class BossSpecialAbilities : MonoBehaviour
         
         Debug.Log("Boss: Shield activated!");
         
-        // Shield duration
         StartCoroutine(ShieldDuration());
     }
     
@@ -115,7 +109,6 @@ public class BossSpecialAbilities : MonoBehaviour
     {
         yield return new WaitForSeconds(bossData.shieldDuration);
         
-        // Deactivate shield
         isShieldActive = false;
         
         if (spriteRenderer != null)
@@ -125,7 +118,6 @@ public class BossSpecialAbilities : MonoBehaviour
         
         Debug.Log("Boss: Shield deactivated!");
         
-        // Start cooldown
         StartCoroutine(ShieldCooldown());
     }
     
@@ -142,20 +134,16 @@ public class BossSpecialAbilities : MonoBehaviour
         
         canUseTeleport = false;
         
-        // Calculate new position
         Vector3 currentPos = transform.position;
         Vector3 newPos = GetRandomTeleportPosition();
         
-        // Teleport effect at current position
         if (teleportEffect != null)
         {
             Instantiate(teleportEffect, currentPos, Quaternion.identity);
         }
         
-        // Move to new position
         transform.position = newPos;
         
-        // Teleport effect at new position
         if (teleportEffect != null)
         {
             Instantiate(teleportEffect, newPos, Quaternion.identity);
@@ -163,7 +151,6 @@ public class BossSpecialAbilities : MonoBehaviour
         
         Debug.Log($"Boss: Teleported from {currentPos} to {newPos}");
         
-        // Start cooldown
         StartCoroutine(TeleportCooldown());
     }
     
@@ -178,7 +165,6 @@ public class BossSpecialAbilities : MonoBehaviour
             float randomY = Random.Range(-teleportRange, teleportRange);
             newPos = currentPos + new Vector3(randomX, randomY, 0);
             
-            // Keep boss within screen bounds
             Vector3 viewportPos = Camera.main.WorldToViewportPoint(newPos);
             if (viewportPos.x < 0.1f) newPos.x = currentPos.x - teleportRange;
             if (viewportPos.x > 0.9f) newPos.x = currentPos.x + teleportRange;
@@ -202,7 +188,6 @@ public class BossSpecialAbilities : MonoBehaviour
         return isShieldActive;
     }
     
-    // Override the TakeDamage method to handle shield
     public bool ShouldBlockDamage()
     {
         return isShieldActive;

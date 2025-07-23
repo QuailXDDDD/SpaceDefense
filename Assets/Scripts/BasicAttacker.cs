@@ -9,7 +9,7 @@ public class BasicAttacker : MonoBehaviour
     private int projectileDamage;
     private float projectileSpeed;
 
-    public Transform firePoint; // Assign a child GameObject here
+    public Transform firePoint;
 
     private float nextFireTime;
 
@@ -26,7 +26,7 @@ public class BasicAttacker : MonoBehaviour
         else
         {
             Debug.LogError("BasicAttacker: Enemy or EnemyData not found!", this);
-            enabled = false; // Disable script if requirements aren't met
+            enabled = false;
             return;
         }
 
@@ -40,18 +40,16 @@ public class BasicAttacker : MonoBehaviour
 
     void Start()
     {
-        nextFireTime = Time.time + (1f / fireRate); // Initial delay based on fire rate
+        nextFireTime = Time.time + (1f / fireRate);
     }
 
-    // Public method to enable immediate shooting (called by formations)
     public void EnableImmediateShooting()
     {
-        nextFireTime = Time.time; // Allow shooting immediately
+        nextFireTime = Time.time;
     }
 
     void Update()
     {
-        // Only fire if fully inside the camera's viewport
         Vector3 viewportPos = Camera.main.WorldToViewportPoint(transform.position);
         bool fullyOnScreen = viewportPos.x > 0 && viewportPos.x < 1 && viewportPos.y > 0 && viewportPos.y < 1;
 
@@ -66,14 +64,12 @@ public class BasicAttacker : MonoBehaviour
     {
         if (projectilePrefab != null && firePoint != null)
         {
-            // Play shooting sound effect
             if (AudioManager.Instance != null)
             {
                 AudioManager.Instance.PlayEnemyShoot();
             }
             
             GameObject projectileGO = Instantiate(projectilePrefab, firePoint.position, firePoint.rotation);
-            // Ensure the projectile script has its damage/speed set
             EnemyProjectile projectile = projectileGO.GetComponent<EnemyProjectile>();
             if (projectile != null)
             {

@@ -4,13 +4,13 @@ using UnityEngine;
 public class BossEnemyData : EnemyData
 {
     [Header("Boss Specific Stats")]
-    public int bossScoreValue = 1000; // Much higher score for defeating a boss
+    public int bossScoreValue = 1000;
     public float entryMoveDuration = 3f;
     public Vector3 entryTargetPosition = new Vector3(0, 3, 0);
     
     [Header("Phase Configuration")]
-    public float phase1HealthThreshold = 0.7f; // 70% health remaining
-    public float phase2HealthThreshold = 0.3f; // 30% health remaining
+    public float phase1HealthThreshold = 0.7f;
+    public float phase2HealthThreshold = 0.3f;
     
     [Header("Phase 1 - Basic Attacks")]
     public float phase1FireRate = 1.5f;

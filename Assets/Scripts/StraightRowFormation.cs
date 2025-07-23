@@ -15,7 +15,7 @@ public class StraightRowFormation : MonoBehaviour
     
     [Header("Spawn Settings")]
     public bool spawnFromOffScreen = true;
-    public float entryDuration = 2f; // Time to move from spawn to formation position
+    public float entryDuration = 2f;
     
     private List<GameObject> enemies = new List<GameObject>();
     private Vector3 targetPosition;
@@ -25,9 +25,7 @@ public class StraightRowFormation : MonoBehaviour
     {
         if (spawnFromOffScreen)
         {
-            // Store the target position and start from above screen
             targetPosition = transform.position;
-            // Use camera orthographic size for better screen boundary calculation
             float screenTop = Camera.main.orthographicSize;
             transform.position = new Vector3(targetPosition.x, screenTop + 3f, targetPosition.z);
         }
@@ -51,11 +49,9 @@ public class StraightRowFormation : MonoBehaviour
             MoveFormation();
         }
         
-        // Clean up destroyed enemies
         CleanupDestroyedEnemies();
         
-        // Debug: Log enemy count every few seconds
-        if (Time.time % 2f < Time.deltaTime) // Every 2 seconds
+        if (Time.time % 2f < Time.deltaTime)
         {
             Debug.Log($"StraightRowFormation: {enemies.Count} enemies alive, hasEnteredScreen: {hasEnteredScreen}");
         }
@@ -65,26 +61,22 @@ public class StraightRowFormation : MonoBehaviour
     {
         Debug.Log($"StraightRowFormation: Starting to create formation with {enemyCount} enemies");
         
-        // Check if enemy prefab is assigned
         if (enemyPrefab == null)
         {
             Debug.LogError("StraightRowFormation: Enemy prefab is not assigned!");
             return;
         }
         
-        // Calculate total width and starting position
         float totalWidth = (enemyCount - 1) * spacing;
         Vector3 startPosition = new Vector3(-totalWidth / 2f, 0, 0);
         
         for (int i = 0; i < enemyCount; i++)
         {
-            // Calculate position for this enemy
             Vector3 enemyPosition = startPosition + new Vector3(i * spacing, 0, 0);
             Vector3 worldPosition = transform.position + enemyPosition;
             
             Debug.Log($"StraightRowFormation: Spawning enemy {i + 1} at position {worldPosition}");
             
-            // Spawn enemy
             GameObject enemy = Instantiate(enemyPrefab, worldPosition, Quaternion.identity, transform);
             
             if (enemy == null)
@@ -93,17 +85,14 @@ public class StraightRowFormation : MonoBehaviour
                 continue;
             }
             
-            // Set scale only if different from current scale
             if (enemy.transform.localScale != enemyScale)
             {
                 enemy.transform.localScale = enemyScale;
             }
             
-            // Check if enemy has required components and fix missing EnemyData
             EnemyBehaviour enemyBehaviour = enemy.GetComponent<EnemyBehaviour>();
             if (enemyBehaviour != null && enemyBehaviour.enemyData == null)
             {
-                // Try to get EnemyData from the prefab's original components
                 EnemyBehaviour prefabEnemyBehaviour = enemyPrefab.GetComponent<EnemyBehaviour>();
                 if (prefabEnemyBehaviour != null && prefabEnemyBehaviour.enemyData != null)
                 {
@@ -116,17 +105,15 @@ public class StraightRowFormation : MonoBehaviour
                 }
             }
             
-            // Add EnemyMover component for straight downward movement
             EnemyMover mover = enemy.GetComponent<EnemyMover>();
             if (mover == null)
             {
                 mover = enemy.AddComponent<EnemyMover>();
             }
             
-            // Configure the mover for straight movement
-            mover.moveSpeed = 0f; // Formation handles movement
+            mover.moveSpeed = 0f;
             mover.moveDirection = Vector3.down;
-            mover.enabled = false; // We'll enable it after entry
+            mover.enabled = false;
             
             enemies.Add(enemy);
             Debug.Log($"StraightRowFormation: Enemy {i + 1} created successfully");

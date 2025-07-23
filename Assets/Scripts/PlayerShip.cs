@@ -4,7 +4,13 @@ public class PlayerShip : MonoBehaviour
 {
     [Header("Movement Settings")]
     public float moveSpeed = 5f;
-    public float screenBoundaryBuffer = 0.5f; // How far from screen edge the player can go
+    public float screenBoundaryBuffer = 0.5f;
+    
+    [Header("Entrance Settings")]
+    public float entranceSpeed = 3f;
+    public Vector3 entranceStartOffset = new Vector3(0, -8f, 0);
+    public Vector3 entranceTargetPosition = new Vector3(0, -3f, 0);
+    public bool playerControlEnabled = false;
     
     [Header("Shooting Settings")]
     public GameObject bulletPrefab;
@@ -17,8 +23,16 @@ public class PlayerShip : MonoBehaviour
     public int maxHealth = 100;
     public int currentHealth;
     
+    [Header("Power-Up States")]
+    public bool isInvincible = false;
+    public float invincibilityDuration = 5f;
+    
     [Header("Effects")]
-    public GameObject explosionPrefab; // Assign the Explosion_FX prefab here
+    public GameObject explosionPrefab;
+    
+    [Header("Invincibility Visual")]
+    public Color invincibilityColor = Color.cyan;
+    public float flashInterval = 0.1f;
     
     private float fireTimer = 0f;
     private float screenLeftEdge;
@@ -27,48 +41,109 @@ public class PlayerShip : MonoBehaviour
     private float screenBottomEdge;
     private SpriteRenderer spriteRenderer;
     private Rigidbody2D rb;
+    
+    private Coroutine invincibilityCoroutine;
+    private Color originalColor;
+    
+    private bool entranceComplete = false;
+    private bool entranceInProgress = false;
+    
+    public static System.Action OnPlayerReady;
 
     void Start()
     {
-        // Get components
         spriteRenderer = GetComponent<SpriteRenderer>();
         rb = GetComponent<Rigidbody2D>();
         
-        // Initialize health
+        if (spriteRenderer != null)
+        {
+            originalColor = spriteRenderer.color;
+        }
+        
         currentHealth = maxHealth;
         
-        // Calculate screen boundaries
         CalculateScreenBoundaries();
         
-        // Create fire point if it doesn't exist
         if (firePoint == null)
         {
             CreateFirePoint();
         }
+        
+        StartEntranceSequence();
     }
 
     void Update()
     {
-        HandleInput();
+        if (entranceInProgress)
+        {
+            HandleEntranceMovement();
+        }
+        else if (playerControlEnabled)
+        {
+            HandleInput();
+        }
+        
         UpdateFireTimer();
+    }
+    
+    void StartEntranceSequence()
+    {
+        Vector3 startPosition = Camera.main.ViewportToWorldPoint(new Vector3(0.5f, 0.5f, 0));
+        startPosition.z = 0;
+        startPosition += entranceStartOffset;
+        transform.position = startPosition;
+        
+        playerControlEnabled = false;
+        entranceInProgress = true;
+        entranceComplete = false;
+        
+        Debug.Log("PlayerShip: Starting entrance sequence from " + startPosition);
+    }
+    
+    void HandleEntranceMovement()
+    {
+        Vector3 targetWorldPosition = Camera.main.ViewportToWorldPoint(new Vector3(0.5f, 0.5f, 0));
+        targetWorldPosition.z = 0;
+        targetWorldPosition += entranceTargetPosition;
+        
+        Vector3 direction = (targetWorldPosition - transform.position).normalized;
+        transform.Translate(direction * entranceSpeed * Time.deltaTime, Space.World);
+        
+        float distanceToTarget = Vector3.Distance(transform.position, targetWorldPosition);
+        if (distanceToTarget <= 0.1f)
+        {
+            transform.position = targetWorldPosition;
+            CompleteEntranceSequence();
+        }
+    }
+    
+    void CompleteEntranceSequence()
+    {
+        entranceInProgress = false;
+        entranceComplete = true;
+        playerControlEnabled = true;
+        
+        Debug.Log("PlayerShip: Entrance sequence complete! Player can now take control.");
+        
+        OnPlayerReady?.Invoke();
     }
 
     void HandleInput()
     {
-        // Movement input
+        if (!playerControlEnabled || !entranceComplete)
+        {
+            return;
+        }
+        
         float moveX = Input.GetAxisRaw("Horizontal");
         float moveY = Input.GetAxisRaw("Vertical");
 
-        // Create movement vector
         Vector3 moveDirection = new Vector3(moveX, moveY, 0).normalized;
         
-        // Apply movement
         transform.Translate(moveDirection * moveSpeed * Time.deltaTime, Space.World);
         
-        // Clamp position to screen boundaries
         ClampToScreen();
         
-        // Shooting input
         if (Input.GetKey(KeyCode.Space) || Input.GetMouseButton(0))
         {
             TryShoot();
@@ -77,7 +152,6 @@ public class PlayerShip : MonoBehaviour
 
     void CalculateScreenBoundaries()
     {
-        // Use camera's orthographic size for accurate boundaries
         Camera mainCam = Camera.main;
         if (mainCam != null)
         {
@@ -91,7 +165,6 @@ public class PlayerShip : MonoBehaviour
         }
         else
         {
-            // Fallback if no main camera
             Vector3 screenBounds = Camera.main.ScreenToWorldPoint(new Vector3(Screen.width, Screen.height, 0));
             screenLeftEdge = -screenBounds.x + screenBoundaryBuffer;
             screenRightEdge = screenBounds.x - screenBoundaryBuffer;
@@ -110,10 +183,9 @@ public class PlayerShip : MonoBehaviour
 
     void CreateFirePoint()
     {
-        // Create a fire point as a child of the player
         GameObject firePointObj = new GameObject("FirePoint");
         firePointObj.transform.SetParent(transform);
-        firePointObj.transform.localPosition = new Vector3(0, 0.5f, 0); // Above the player
+        firePointObj.transform.localPosition = new Vector3(0, 0.5f, 0);
         firePoint = firePointObj.transform;
         
         Debug.Log("PlayerShip: Created fire point at " + firePoint.position);
@@ -126,6 +198,11 @@ public class PlayerShip : MonoBehaviour
 
     void TryShoot()
     {
+        if (!playerControlEnabled || !entranceComplete)
+        {
+            return;
+        }
+        
         if (fireTimer >= fireRate && bulletPrefab != null)
         {
             Shoot();
@@ -141,16 +218,13 @@ public class PlayerShip : MonoBehaviour
             return;
         }
 
-        // Play shooting sound effect
         if (AudioManager.Instance != null)
         {
             AudioManager.Instance.PlayPlayerShoot();
         }
         
-        // Instantiate bullet
         GameObject bullet = Instantiate(bulletPrefab, firePoint.position, Quaternion.identity);
         
-        // Set bullet properties
         BulletScript bulletScript = bullet.GetComponent<BulletScript>();
         if (bulletScript != null)
         {
@@ -159,14 +233,12 @@ public class PlayerShip : MonoBehaviour
         }
         else
         {
-            // If no PlayerBullet script, add basic movement
             Rigidbody2D bulletRb = bullet.GetComponent<Rigidbody2D>();
             if (bulletRb != null)
             {
                 bulletRb.linearVelocity = Vector2.up * bulletSpeed;
             }
             
-            // Destroy bullet after lifetime
             Destroy(bullet, bulletLifetime);
         }
         
@@ -175,18 +247,21 @@ public class PlayerShip : MonoBehaviour
 
     public void TakeDamage(int damage)
     {
-        // Use the damage parameter passed in
+        if (isInvincible)
+        {
+            Debug.Log("PlayerShip: Damage blocked by invincibility!");
+            return;
+        }
+        
         currentHealth -= damage;
-        int heartsLost = damage / 25; // Calculate how many hearts were lost
+        int heartsLost = damage / 25;
         Debug.Log($"PlayerShip: Took {damage} damage! Lost {heartsLost} heart(s). Health: {currentHealth}/{maxHealth}");
         
-        // Play hit sound effect
         if (AudioManager.Instance != null)
         {
             AudioManager.Instance.PlayPlayerHit();
         }
         
-        // Visual feedback - flash red when taking damage
         if (spriteRenderer != null)
         {
             StartCoroutine(FlashRed());
@@ -211,42 +286,54 @@ public class PlayerShip : MonoBehaviour
     {
         Debug.Log("PlayerShip: Die() method called! Player destroyed! Game Over!");
         
-        // Play explosion sound effect
         if (AudioManager.Instance != null)
         {
             AudioManager.Instance.PlayPlayerExplosion();
         }
         
-        // Create explosion effect
         if (explosionPrefab != null)
         {
             Instantiate(explosionPrefab, transform.position, Quaternion.identity);
         }
         
-        // Disable player movement and shooting
         enabled = false;
         
-        // Change sprite to indicate destruction
         if (spriteRenderer != null)
         {
             spriteRenderer.color = Color.gray;
         }
         
-        // Add game over logic here
-        // For now, just destroy the player after a delay
-        Destroy(gameObject, 2f);
+        GameOverManager.PlayerDied();
     }
     
-    // Public method to get current health percentage
     public float GetHealthPercentage()
     {
         return (float)currentHealth / maxHealth;
     }
     
-    // Public method to check if player is alive
     public bool IsAlive()
     {
         return currentHealth > 0;
+    }
+    
+    public bool IsPlayerReady()
+    {
+        return entranceComplete && playerControlEnabled;
+    }
+    
+    [ContextMenu("Restart Entrance Sequence")]
+    public void RestartEntranceSequence()
+    {
+        StartEntranceSequence();
+    }
+    
+    [ContextMenu("Complete Entrance Immediately")]
+    public void CompleteEntranceImmediately()
+    {
+        if (entranceInProgress)
+        {
+            CompleteEntranceSequence();
+        }
     }
 
     void OnTriggerEnter2D(Collider2D other)
@@ -255,10 +342,8 @@ public class PlayerShip : MonoBehaviour
         
         if (other.CompareTag("Enemy") || other.CompareTag("EnemyBullet") || other.CompareTag("EnemyProjectile"))
         {
-            // Always take exactly 1 heart of damage (25 health) regardless of projectile damage
             TakeDamage(25);
             
-            // Destroy the enemy projectile
             if (other.CompareTag("EnemyBullet") || other.CompareTag("EnemyProjectile"))
             {
                 Destroy(other.gameObject);
@@ -268,5 +353,46 @@ public class PlayerShip : MonoBehaviour
         {
             Debug.Log($"PlayerShip collided with: {other.name} (tag: {other.tag}) - No damage taken");
         }
+    }
+    
+    // Power-Up Management Methods
+    public void ActivateInvincibility()
+    {
+        if (invincibilityCoroutine != null)
+        {
+            StopCoroutine(invincibilityCoroutine);
+        }
+        
+        invincibilityCoroutine = StartCoroutine(InvincibilityCoroutine());
+    }
+    
+    System.Collections.IEnumerator InvincibilityCoroutine()
+    {
+        isInvincible = true;
+        Debug.Log("PlayerShip: Invincibility activated for " + invincibilityDuration + " seconds!");
+        
+        float elapsed = 0f;
+        bool isFlashing = false;
+        
+        while (elapsed < invincibilityDuration)
+        {
+            if (spriteRenderer != null)
+            {
+                spriteRenderer.color = isFlashing ? invincibilityColor : originalColor;
+                isFlashing = !isFlashing;
+            }
+            
+            yield return new WaitForSeconds(flashInterval);
+            elapsed += flashInterval;
+        }
+        
+        isInvincible = false;
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.color = originalColor;
+        }
+        
+        Debug.Log("PlayerShip: Invincibility ended!");
+        invincibilityCoroutine = null;
     }
 }

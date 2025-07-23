@@ -2,22 +2,6 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
 
-/// <summary>
-/// Heart UI System - Displays player health as 4 hearts (25 health each)
-/// 
-/// MANUAL SETUP INSTRUCTIONS:
-/// 1. Create a Canvas in your scene (UI > Canvas)
-/// 2. Create an empty GameObject as child of Canvas
-/// 3. Add this HeartUI component to that GameObject
-/// 4. Position the GameObject where you want hearts to appear (top-left recommended)
-/// 5. Hearts will be created automatically when you play the scene
-/// 
-/// The system automatically:
-/// - Creates 4 heart UI elements
-/// - Updates when player takes damage (25 damage = 1 heart lost)
-/// - Creates default heart sprites if none are assigned
-/// - Animates heart loss
-/// </summary>
 public class HeartUI : MonoBehaviour
 {
     [Header("Heart UI References")]
@@ -45,7 +29,6 @@ public class HeartUI : MonoBehaviour
     
     void Awake()
     {
-        // Singleton pattern
         if (Instance == null)
         {
             Instance = this;
@@ -59,7 +42,6 @@ public class HeartUI : MonoBehaviour
     
     void Start()
     {
-        // Find the player ship
         playerShip = FindFirstObjectByType<PlayerShip>();
         if (playerShip == null)
         {
@@ -68,16 +50,13 @@ public class HeartUI : MonoBehaviour
             return;
         }
         
-        // Create default sprites if none are assigned
         if (fullHeartSprite == null || emptyHeartSprite == null)
         {
             CreateDefaultHeartSprites();
         }
         
-        // Initialize the heart display
         InitializeHearts();
         
-        // Set initial health
         previousHealth = playerShip.currentHealth;
         UpdateHeartDisplay(playerShip.currentHealth);
         
@@ -86,7 +65,6 @@ public class HeartUI : MonoBehaviour
     
     void Update()
     {
-        // Check for health changes
         if (playerShip != null && playerShip.currentHealth != previousHealth)
         {
             UpdateHeartDisplay(playerShip.currentHealth);
@@ -96,19 +74,16 @@ public class HeartUI : MonoBehaviour
     
     void InitializeHearts()
     {
-        // If no heart images are assigned, try to find them automatically
         if (heartImages.Count == 0)
         {
             CreateHeartImages();
         }
         
-        // Make sure we have the right number of hearts
         while (heartImages.Count < maxHearts)
         {
             CreateSingleHeartImage(heartImages.Count);
         }
         
-        // Initialize all hearts as full
         currentHearts = maxHearts;
         for (int i = 0; i < heartImages.Count; i++)
         {
@@ -124,18 +99,15 @@ public class HeartUI : MonoBehaviour
     
     void CreateHeartImages()
     {
-        // Create heart images automatically if none exist
         GameObject heartContainer = new GameObject("HeartContainer");
         heartContainer.transform.SetParent(transform, false);
         
-        // Add horizontal layout group for automatic positioning
         HorizontalLayoutGroup layoutGroup = heartContainer.AddComponent<HorizontalLayoutGroup>();
         layoutGroup.spacing = 10f;
         layoutGroup.childAlignment = TextAnchor.MiddleLeft;
         layoutGroup.childControlWidth = false;
         layoutGroup.childControlHeight = false;
         
-        // Set up container to fill parent
         RectTransform containerRect = heartContainer.GetComponent<RectTransform>();
         containerRect.anchorMin = new Vector2(0, 0);
         containerRect.anchorMax = new Vector2(1, 1);
@@ -143,7 +115,6 @@ public class HeartUI : MonoBehaviour
         containerRect.anchoredPosition = Vector2.zero;
         containerRect.sizeDelta = Vector2.zero;
         
-        // Create individual heart images
         for (int i = 0; i < maxHearts; i++)
         {
             CreateSingleHeartImage(i, heartContainer);
@@ -167,7 +138,6 @@ public class HeartUI : MonoBehaviour
         heartImage.sprite = fullHeartSprite;
         heartImage.preserveAspect = true;
         
-        // Set heart size
         RectTransform heartRect = heartImage.GetComponent<RectTransform>();
         heartRect.sizeDelta = new Vector2(40, 40);
         
@@ -178,11 +148,9 @@ public class HeartUI : MonoBehaviour
     
     public void UpdateHeartDisplay(int currentHealth)
     {
-        // Calculate how many hearts should be full
         int heartsToShow = Mathf.CeilToInt((float)currentHealth / healthPerHeart);
         heartsToShow = Mathf.Clamp(heartsToShow, 0, maxHearts);
         
-        // Update heart sprites
         for (int i = 0; i < heartImages.Count && i < maxHearts; i++)
         {
             if (heartImages[i] != null)
@@ -200,7 +168,6 @@ public class HeartUI : MonoBehaviour
             }
         }
         
-        // Play heart loss animation if hearts decreased
         if (heartsToShow < currentHearts && enableHeartAnimation)
         {
             StartCoroutine(PlayHeartLossAnimation(currentHearts - 1));
@@ -298,5 +265,29 @@ public class HeartUI : MonoBehaviour
         {
             maxHearts = 4;
         }
+    }
+    
+    // Reset method for new game
+    public void ResetForNewGame()
+    {
+        // Reset internal state
+        currentHearts = maxHearts;
+        previousHealth = maxHealth;
+        
+        // Find the new player ship
+        playerShip = FindFirstObjectByType<PlayerShip>();
+        
+        // Reset all hearts to full
+        for (int i = 0; i < heartImages.Count && i < maxHearts; i++)
+        {
+            if (heartImages[i] != null)
+            {
+                heartImages[i].sprite = fullHeartSprite;
+                heartImages[i].color = Color.white;
+                heartImages[i].transform.localScale = Vector3.one;
+            }
+        }
+        
+        Debug.Log("HeartUI: Heart system reset for new game - all hearts restored to full");
     }
 } 

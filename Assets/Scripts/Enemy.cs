@@ -3,15 +3,22 @@ using UnityEngine;
 public class Enemy : MonoBehaviour
 {
     [Header("Enemy Data")]
-    public EnemyData enemyData; // Assign the Scriptable Object here in the Inspector
+    public EnemyData enemyData;
     
     [Header("Effects")]
-    public GameObject explosionPrefab; // Assign the Explosion_FX prefab here
+    public GameObject explosionPrefab;
+    
+    [Header("Spawn Protection")]
+    public float spawnInvincibilityDuration = 5f;
+    public bool hasSpawnProtection = true;
 
     private int currentHealth;
-    private SpriteRenderer spriteRenderer; // To display the enemy's sprite
+    private SpriteRenderer spriteRenderer;
+    protected bool isSpawnInvincible = false;
+    protected Coroutine spawnProtectionCoroutine;
+    private Color originalColor;
 
-    public int CurrentHealth => currentHealth; // Public getter for health
+    public int CurrentHealth => currentHealth;
 
     protected virtual void Awake()
     {
@@ -35,15 +42,30 @@ public class Enemy : MonoBehaviour
         {
             spriteRenderer.sprite = enemyData.enemySprite;
         }
-        transform.localScale = enemyData.scale; // Apply scale from data
+        transform.localScale = enemyData.scale;
+        
+        if (spriteRenderer != null)
+        {
+            originalColor = spriteRenderer.color;
+        }
+        
+        if (hasSpawnProtection)
+        {
+            StartSpawnProtection();
+        }
     }
 
     public virtual void TakeDamage(int amount)
     {
+        if (isSpawnInvincible)
+        {
+            Debug.Log($"Enemy {gameObject.name} is protected by spawn invincibility! Damage blocked.");
+            return;
+        }
+        
         currentHealth -= amount;
         Debug.Log($"{gameObject.name} took {amount} damage. Health: {currentHealth}");
         
-        // Play hit sound effect
         if (AudioManager.Instance != null)
         {
             AudioManager.Instance.PlayEnemyHit();
@@ -59,19 +81,106 @@ public class Enemy : MonoBehaviour
     {
         Debug.Log($"{gameObject.name} has been destroyed!");
         
-        // Play explosion sound effect
         if (AudioManager.Instance != null)
         {
             AudioManager.Instance.PlayEnemyExplosion();
         }
         
-        // Create explosion effect
         if (explosionPrefab != null)
         {
             Instantiate(explosionPrefab, transform.position, Quaternion.identity);
         }
         
-        // TODO: Add score, etc.
+        GameObject canvasObject = GameObject.Find("Canvas");
+        if (canvasObject != null && enemyData != null)
+        {
+            GameUI gameUI = canvasObject.GetComponent<GameUI>();
+            if (gameUI != null)
+            {
+                gameUI.AddScore(enemyData.scoreValue);
+            }
+        }
+        
         Destroy(gameObject);
+    }
+    
+    protected void StartSpawnProtection()
+    {
+        if (this == null || gameObject == null)
+        {
+            Debug.LogError("StartSpawnProtection called on destroyed object!");
+            return;
+        }
+        
+        isSpawnInvincible = true;
+        spawnProtectionCoroutine = StartCoroutine(SpawnProtectionCoroutine());
+        
+        Invoke(nameof(ForceRemoveProtection), spawnInvincibilityDuration + 1f);
+        
+        Debug.Log($"Enemy {gameObject.name} spawn protection activated for {spawnInvincibilityDuration} seconds");
+    }
+    
+    private void ForceRemoveProtection()
+    {
+        if (isSpawnInvincible)
+        {
+            Debug.Log($"Enemy {gameObject.name} FORCED protection removal (backup safety)");
+            RemoveSpawnProtection();
+        }
+    }
+    
+    System.Collections.IEnumerator SpawnProtectionCoroutine()
+    {
+        float endTime = Time.time + spawnInvincibilityDuration;
+        bool isFlashing = false;
+        
+        Debug.Log($"Enemy {gameObject.name} protection will end at time: {endTime}, current time: {Time.time}");
+        
+        while (Time.time < endTime)
+        {
+            if (spriteRenderer != null)
+            {
+                isFlashing = !isFlashing;
+                if (isFlashing)
+                {
+                    float alpha = Mathf.Max(originalColor.a, 0.8f);
+                    spriteRenderer.color = new Color(originalColor.r * 0.7f, originalColor.g * 0.9f, originalColor.b * 1.2f, alpha);
+                }
+                else
+                {
+                    float alpha = Mathf.Max(originalColor.a, 0.8f);
+                    spriteRenderer.color = new Color(originalColor.r, originalColor.g, originalColor.b, alpha);
+                }
+            }
+            
+            yield return new WaitForSeconds(0.1f);
+        }
+        
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.color = originalColor;
+        }
+        
+        isSpawnInvincible = false;
+        Debug.Log($"Enemy {gameObject.name} spawn protection expired at time: {Time.time}");
+    }
+    
+    protected void RemoveSpawnProtection()
+    {
+        if (spawnProtectionCoroutine != null)
+        {
+            StopCoroutine(spawnProtectionCoroutine);
+            spawnProtectionCoroutine = null;
+        }
+        
+        CancelInvoke(nameof(ForceRemoveProtection));
+        
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.color = originalColor;
+        }
+        
+        isSpawnInvincible = false;
+        Debug.Log($"Enemy {gameObject.name} spawn protection manually removed");
     }
 }

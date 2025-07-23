@@ -7,7 +7,6 @@ public class SkullFormation : MonoBehaviour
     public float spacing = 1.0f;
     public Vector3 enemyScale = new Vector3(0.5f, 0.5f, 1f);
 
-    // 1 = enemy, 0 = empty (2 rows of 7 enemies)
     int[,] linePattern = new int[,] {
         {1,1,1,1,1,1,1},
         {1,1,1,1,1,1,1}

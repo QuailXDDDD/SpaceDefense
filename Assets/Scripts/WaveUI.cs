@@ -15,7 +15,6 @@ public class WaveUI : MonoBehaviour
     
     void Start()
     {
-        // Find the WaveManager in the scene
         waveManager = FindFirstObjectByType<WaveManager>();
         
         if (waveManager == null)
@@ -25,18 +24,15 @@ public class WaveUI : MonoBehaviour
             return;
         }
         
-        // Subscribe to wave events
         WaveManager.OnWaveStarted += OnWaveStarted;
         WaveManager.OnWaveCompleted += OnWaveCompleted;
         WaveManager.OnAllWavesCompleted += OnAllWavesCompleted;
         
-        // Initialize UI
         UpdateUI();
     }
     
     void OnDestroy()
     {
-        // Unsubscribe from events
         WaveManager.OnWaveStarted -= OnWaveStarted;
         WaveManager.OnWaveCompleted -= OnWaveCompleted;
         WaveManager.OnAllWavesCompleted -= OnAllWavesCompleted;
@@ -51,7 +47,6 @@ public class WaveUI : MonoBehaviour
     {
         if (waveManager == null) return;
         
-        // Update wave info text
         if (waveInfoText != null)
         {
             if (waveManager.waveInProgress)
@@ -68,7 +63,6 @@ public class WaveUI : MonoBehaviour
             }
         }
         
-        // Update enemy count text
         if (enemyCountText != null)
         {
             if (waveManager.waveInProgress)
@@ -82,15 +76,14 @@ public class WaveUI : MonoBehaviour
             }
         }
         
-        // Update wave progress text
         if (waveProgressText != null)
         {
-            string progressText = GetWaveProgressText();
+            string progressText = GetWaveDescription();
             waveProgressText.text = progressText;
         }
     }
     
-    string GetWaveProgressText()
+    string GetWaveDescription()
     {
         if (waveManager.currentWave == 0)
         {
@@ -103,14 +96,16 @@ public class WaveUI : MonoBehaviour
                 case 1:
                     return "Straight Line Formation";
                 case 2:
-                    return "ZigZag Formation";
+                    return "Grid Formation - 2 Rows!";
                 case 3:
+                    return "ZigZag Formation";
+                case 4:
                     return "Circle Formation - BOSS WAVE!";
                 default:
                     return "Unknown Wave";
             }
         }
-        else if (waveManager.currentWave >= 3)
+        else if (waveManager.currentWave >= 4)
         {
             return "All Waves Complete!";
         }
@@ -120,15 +115,12 @@ public class WaveUI : MonoBehaviour
         }
     }
     
-    // Event handlers
     void OnWaveStarted(int waveNumber)
     {
         Debug.Log($"WaveUI: Wave {waveNumber} started!");
         
-        // You can add special UI effects here for wave starts
         if (waveNumber == 3)
         {
-            // Special effect for boss wave
             StartCoroutine(ShowBossWaveWarning());
         }
     }
@@ -137,7 +129,6 @@ public class WaveUI : MonoBehaviour
     {
         Debug.Log($"WaveUI: Wave {waveNumber} completed!");
         
-        // You can add special UI effects here for wave completions
         StartCoroutine(ShowWaveCompleteMessage(waveNumber));
     }
     
@@ -145,11 +136,9 @@ public class WaveUI : MonoBehaviour
     {
         Debug.Log("WaveUI: All waves completed!");
         
-        // Show victory screen or message
         StartCoroutine(ShowVictoryMessage());
     }
     
-    // UI Effect Coroutines
     System.Collections.IEnumerator ShowBossWaveWarning()
     {
         if (waveProgressText != null)
@@ -157,7 +146,6 @@ public class WaveUI : MonoBehaviour
             string originalText = waveProgressText.text;
             Color originalColor = waveProgressText.color;
             
-            // Flash warning message
             for (int i = 0; i < 3; i++)
             {
                 waveProgressText.text = "⚠️ BOSS WAVE! ⚠️";
@@ -194,7 +182,6 @@ public class WaveUI : MonoBehaviour
         {
             Color originalColor = waveInfoText.color;
             
-            // Victory message with color animation
             for (int i = 0; i < 5; i++)
             {
                 waveInfoText.color = Color.yellow;
@@ -207,7 +194,6 @@ public class WaveUI : MonoBehaviour
         }
     }
     
-    // Public methods for manual UI updates
     public void ForceUpdateUI()
     {
         UpdateUI();
