@@ -216,11 +216,9 @@ public class LeaderboardTableUI : MonoBehaviour
             return;
         }
         
-        // Instantiate row
         GameObject rowObj = Instantiate(leaderboardRowPrefab, tableContentParent);
         currentRows.Add(rowObj);
         
-        // Get row component
         LeaderboardRowUI rowUI = rowObj.GetComponent<LeaderboardRowUI>();
         if (rowUI != null)
         {

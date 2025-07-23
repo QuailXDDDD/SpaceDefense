@@ -128,12 +128,10 @@ public class StraightRowFormation : MonoBehaviour
         Vector3 startPos = transform.position;
         float timer = 0f;
         
-        // Disable OnBecameInvisible during entry to prevent premature destruction
         foreach (GameObject enemy in enemies)
         {
             if (enemy != null)
             {
-                // Temporarily disable any scripts that might destroy enemies off-screen
                 EnemyBehaviour enemyBehaviour = enemy.GetComponent<EnemyBehaviour>();
                 if (enemyBehaviour != null)
                 {
@@ -152,7 +150,6 @@ public class StraightRowFormation : MonoBehaviour
         transform.position = targetPosition;
         hasEnteredScreen = true;
         
-        // Re-enable enemy behaviors now that they're on screen
         foreach (GameObject enemy in enemies)
         {
             if (enemy != null)
@@ -172,7 +169,6 @@ public class StraightRowFormation : MonoBehaviour
             }
         }
         
-        // Enable enemy shooting immediately after entry
         foreach (GameObject enemy in enemies)
         {
             if (enemy != null)
@@ -184,7 +180,6 @@ public class StraightRowFormation : MonoBehaviour
                     enemyBehaviour.EnableImmediateShooting();
                 }
                 
-                // Also enable immediate shooting for any attack components
                 BasicAttacker basicAttacker = enemy.GetComponent<BasicAttacker>();
                 if (basicAttacker != null)
                 {
@@ -208,11 +203,8 @@ public class StraightRowFormation : MonoBehaviour
         Debug.Log($"StraightRowFormation: Entered screen, {enemies.Count} enemies moving straight down");
     }
     
-
-    
     void MoveFormation()
     {
-        // If enemies haven't been given individual movement control, move as formation
         bool anyEnemyHasIndividualMovement = false;
         foreach (GameObject enemy in enemies)
         {
@@ -227,7 +219,6 @@ public class StraightRowFormation : MonoBehaviour
             }
         }
         
-        // If no individual movement, move as formation
         if (!anyEnemyHasIndividualMovement)
         {
             transform.Translate(moveDirection.normalized * moveSpeed * Time.deltaTime);
@@ -236,32 +227,27 @@ public class StraightRowFormation : MonoBehaviour
     
     void CleanupDestroyedEnemies()
     {
-        // Remove null references (destroyed enemies)
         enemies.RemoveAll(enemy => enemy == null);
     }
     
-    // Public method to check if formation is cleared
     public bool IsFormationCleared()
     {
         CleanupDestroyedEnemies();
         return enemies.Count == 0;
     }
     
-    // Public method to get the number of remaining enemies
     public int GetRemainingEnemyCount()
     {
         CleanupDestroyedEnemies();
         return enemies.Count;
     }
     
-    // Public method to get all active enemies
     public List<GameObject> GetActiveEnemies()
     {
         CleanupDestroyedEnemies();
         return new List<GameObject>(enemies);
     }
     
-    // Public method to force all enemies to start moving down
     public void StartDownwardMovement()
     {
         foreach (GameObject enemy in enemies)
@@ -281,7 +267,6 @@ public class StraightRowFormation : MonoBehaviour
         }
     }
     
-    // Gizmo to show formation in editor
     void OnDrawGizmosSelected()
     {
         if (enemyPrefab == null) return;
@@ -296,7 +281,6 @@ public class StraightRowFormation : MonoBehaviour
             Gizmos.DrawWireCube(enemyPosition, Vector3.one * 0.5f);
         }
         
-        // Draw movement direction
         Gizmos.color = Color.red;
         Gizmos.DrawRay(transform.position, moveDirection.normalized * 2f);
     }

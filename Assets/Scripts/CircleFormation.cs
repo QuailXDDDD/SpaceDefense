@@ -121,26 +121,21 @@ public class CircleFormation : MonoBehaviour
                 Debug.LogError("CircleFormation: Boss script not found on boss prefab!");
             }
             
-            // Check and fix sprite renderer
             SpriteRenderer bossRenderer = bossEnemy.GetComponent<SpriteRenderer>();
             if (bossRenderer != null)
             {
                 Debug.Log($"CircleFormation: Boss sprite renderer - Sprite: {bossRenderer.sprite != null}, Color: {bossRenderer.color}, Enabled: {bossRenderer.enabled}, SortingOrder: {bossRenderer.sortingOrder}");
                 
-                // Ensure sprite renderer is visible
                 bossRenderer.enabled = true;
                 
-                // Fix color if it's transparent
                 if (bossRenderer.color.a < 0.1f)
                 {
                     bossRenderer.color = Color.white;
                     Debug.Log("CircleFormation: Fixed boss color (was transparent)");
                 }
                 
-                // Set high sorting order to ensure visibility
                 bossRenderer.sortingOrder = 10;
                 
-                // If no sprite assigned, try to get from BossEnemyData
                 if (bossRenderer.sprite == null)
                 {
                     BossEnemy bossComponent = bossEnemy.GetComponent<BossEnemy>();
@@ -162,7 +157,6 @@ public class CircleFormation : MonoBehaviour
                 Debug.LogError("CircleFormation: No SpriteRenderer found on boss!");
             }
             
-            // Disable boss attack components initially
             if (spawnFromOffScreen)
             {
                 MonoBehaviour[] attackComponents = bossEnemy.GetComponents<MonoBehaviour>();
@@ -185,25 +179,20 @@ public class CircleFormation : MonoBehaviour
             Debug.LogError("CircleFormation: Boss prefab is null!");
         }
         
-
         float angleStep = 360f / enemyCount;
         
         for (int i = 0; i < enemyCount; i++)
         {
-            // Calculate angle in radians
             float angle = i * angleStep * Mathf.Deg2Rad;
             
-            // Calculate position on circle
             Vector3 circlePosition = new Vector3(
                 Mathf.Cos(angle) * circleRadius,
                 Mathf.Sin(angle) * circleRadius,
                 0
             );
             
-            // Store initial position
             initialEnemyPositions.Add(circlePosition);
             
-            // Decide which enemy to spawn: special enemy for the first position, regular enemies for the rest
             GameObject prefabToUse = enemyPrefab;
             bool isSpecialEnemy = false;
             
@@ -214,26 +203,21 @@ public class CircleFormation : MonoBehaviour
                 Debug.Log("CircleFormation: Spawning special invincibility drop enemy at position 0");
             }
             
-            // Spawn enemy
             GameObject enemy = Instantiate(prefabToUse, transform.position + circlePosition, Quaternion.identity, transform);
             
-            // Set scale only if different from current scale
             if (enemy.transform.localScale != enemyScale)
             {
                 enemy.transform.localScale = enemyScale;
             }
             
-            // Disable individual enemy movement - formation will handle it
             EnemyBehaviour enemyBehaviour = enemy.GetComponent<EnemyBehaviour>();
             if (enemyBehaviour != null)
             {
-                // Set move speed to 0 so it doesn't move individually
                 if (enemyBehaviour.enemyData != null)
                 {
                     enemyBehaviour.enemyData.moveSpeed = 0f;
                 }
                 
-                // Enable power-up drops for special enemy
                 if (isSpecialEnemy)
                 {
                     enemyBehaviour.canDropPowerUps = true;
@@ -258,7 +242,6 @@ public class CircleFormation : MonoBehaviour
         Vector3 startPos = transform.position;
         Debug.Log($"CircleFormation: Starting entry movement from {startPos} to {targetPosition} over {entryDuration} seconds");
         
-        // Temporarily disable enemy behaviors during entry to prevent off-screen destruction
         List<EnemyBehaviour> enemyBehaviours = new List<EnemyBehaviour>();
         foreach (GameObject enemy in circleEnemies)
         {
@@ -273,7 +256,6 @@ public class CircleFormation : MonoBehaviour
             }
         }
         
-        // Also disable boss behaviors during entry
         BossEnemy bossScript = null;
         if (bossEnemy != null)
         {
@@ -292,7 +274,6 @@ public class CircleFormation : MonoBehaviour
             transform.position = Vector3.Lerp(startPos, targetPosition, progress);
             timer += Time.deltaTime;
             
-            // Debug progress every 0.5 seconds
             if (timer % 0.5f < Time.deltaTime)
             {
                 Debug.Log($"CircleFormation: Entry progress {(progress * 100):F0}% - Position: {transform.position}");
@@ -304,7 +285,6 @@ public class CircleFormation : MonoBehaviour
         transform.position = targetPosition;
         hasEnteredScreen = true;
         
-        // Re-enable enemy behaviors
         foreach (EnemyBehaviour enemyBehaviour in enemyBehaviours)
         {
             if (enemyBehaviour != null)
@@ -313,7 +293,6 @@ public class CircleFormation : MonoBehaviour
             }
         }
         
-        // Activate the boss
         if (activateBossOnEntry)
         {
             ActivateBoss();
@@ -321,7 +300,6 @@ public class CircleFormation : MonoBehaviour
         
         Debug.Log($"CircleFormation: Entry complete! Final position: {targetPosition}, starting rotation. StayInPosition: {stayInPosition}");
         
-        // Enable enemy shooting immediately after entry
         foreach (GameObject enemy in circleEnemies)
         {
             if (enemy != null)
@@ -333,7 +311,6 @@ public class CircleFormation : MonoBehaviour
                     enemyBehaviour.EnableImmediateShooting();
                 }
                 
-                // Also enable immediate shooting for any attack components
                 BasicAttacker basicAttacker = enemy.GetComponent<BasicAttacker>();
                 if (basicAttacker != null)
                 {
@@ -354,7 +331,6 @@ public class CircleFormation : MonoBehaviour
             }
         }
         
-        // Also enable boss shooting immediately
         if (bossEnemy != null)
         {
             BossEnemy bossComponent = bossEnemy.GetComponent<BossEnemy>();
@@ -363,7 +339,6 @@ public class CircleFormation : MonoBehaviour
                 bossComponent.enabled = true;
             }
             
-            // Enable immediate shooting for boss attack components
             BasicAttacker basicAttacker = bossEnemy.GetComponent<BasicAttacker>();
             if (basicAttacker != null)
             {
@@ -382,7 +357,6 @@ public class CircleFormation : MonoBehaviour
                 burstAttacker.EnableImmediateShooting();
             }
             
-            // Check for boss-specific attack components
             BossPhaseAttacker bossPhaseAttacker = bossEnemy.GetComponent<BossPhaseAttacker>();
             if (bossPhaseAttacker != null)
             {
@@ -391,8 +365,6 @@ public class CircleFormation : MonoBehaviour
             }
         }
     }
-    
-
     
     void ActivateBoss()
     {
@@ -406,7 +378,6 @@ public class CircleFormation : MonoBehaviour
                 bossScript.enabled = true;
                 Debug.Log($"CircleFormation: BossEnemy script enabled. Health: {bossScript.CurrentHealth}");
                 
-                // Check if boss still exists after enabling
                 if (bossEnemy == null)
                 {
                     Debug.LogError("CircleFormation: Boss was destroyed after enabling script!");
@@ -418,17 +389,14 @@ public class CircleFormation : MonoBehaviour
                 Debug.LogError("CircleFormation: Boss script not found during activation!");
             }
             
-            // Check and fix sprite renderer after activation
             SpriteRenderer bossRenderer = bossEnemy.GetComponent<SpriteRenderer>();
             if (bossRenderer != null)
             {
                 Debug.Log($"CircleFormation: After activation - Boss sprite: {bossRenderer.sprite != null}, Color: {bossRenderer.color}, Enabled: {bossRenderer.enabled}, SortingOrder: {bossRenderer.sortingOrder}");
                 
-                // Ensure sprite renderer is still visible after activation
                 bossRenderer.enabled = true;
                 bossRenderer.sortingOrder = 10;
                 
-                // Fix color if spawn protection made it weird
                 if (bossRenderer.color.a < 0.1f || bossRenderer.color == Color.clear)
                 {
                     bossRenderer.color = Color.white;
@@ -436,7 +404,6 @@ public class CircleFormation : MonoBehaviour
                 }
             }
             
-            // Enable boss attack components
             MonoBehaviour[] attackComponents = bossEnemy.GetComponents<MonoBehaviour>();
             int enabledCount = 0;
             foreach (var component in attackComponents)
@@ -458,18 +425,14 @@ public class CircleFormation : MonoBehaviour
     
     void RotateCircle()
     {
-        // Update rotation angle
         currentRotationAngle += rotationSpeed * Time.deltaTime;
         
-        // Apply rotation to circle enemies
         for (int i = 0; i < circleEnemies.Count && i < initialEnemyPositions.Count; i++)
         {
             if (circleEnemies[i] != null)
             {
-                // Get the initial position and apply rotation
                 Vector3 initialPos = initialEnemyPositions[i];
                 
-                // Apply rotation matrix
                 float radians = currentRotationAngle * Mathf.Deg2Rad;
                 Vector3 rotatedPos = new Vector3(
                     initialPos.x * Mathf.Cos(radians) - initialPos.y * Mathf.Sin(radians),
@@ -477,7 +440,6 @@ public class CircleFormation : MonoBehaviour
                     initialPos.z
                 );
                 
-                // Set the enemy's position relative to formation center
                 circleEnemies[i].transform.position = transform.position + rotatedPos;
             }
         }
@@ -485,13 +447,11 @@ public class CircleFormation : MonoBehaviour
     
     void MoveFormation()
     {
-        // Move the entire formation downward
         transform.Translate(moveDirection.normalized * moveSpeed * Time.deltaTime);
     }
     
     void CleanupDestroyedEnemies()
     {
-        // Remove null references and their corresponding initial positions
         for (int i = circleEnemies.Count - 1; i >= 0; i--)
         {
             if (circleEnemies[i] == null)
@@ -504,34 +464,29 @@ public class CircleFormation : MonoBehaviour
             }
         }
         
-        // Check if boss is destroyed
         if (bossEnemy == null)
         {
             Debug.Log("CircleFormation: Boss has been destroyed!");
         }
     }
     
-    // Public method to check if formation is cleared (all enemies + boss destroyed)
     public bool IsFormationCleared()
     {
         CleanupDestroyedEnemies();
         return circleEnemies.Count == 0 && bossEnemy == null;
     }
     
-    // Public method to check if only circle enemies are cleared (boss might still be alive)
     public bool AreCircleEnemiesCleared()
     {
         CleanupDestroyedEnemies();
         return circleEnemies.Count == 0;
     }
     
-    // Public method to check if boss is destroyed
     public bool IsBossDestroyed()
     {
         return bossEnemy == null;
     }
     
-    // Public method to get the number of remaining enemies (circle enemies + boss)
     public int GetRemainingEnemyCount()
     {
         CleanupDestroyedEnemies();
@@ -540,7 +495,6 @@ public class CircleFormation : MonoBehaviour
         return count;
     }
     
-    // Public method to get all active enemies (circle enemies + boss)
     public List<GameObject> GetActiveEnemies()
     {
         CleanupDestroyedEnemies();
@@ -552,24 +506,20 @@ public class CircleFormation : MonoBehaviour
         return allEnemies;
     }
     
-    // Public method to manually activate boss
     public void ManuallyActivateBoss()
     {
         ActivateBoss();
     }
     
-    // Public method to adjust rotation speed
     public void SetRotationSpeed(float newSpeed)
     {
         rotationSpeed = newSpeed;
     }
     
-    // Public method to adjust circle radius (will recalculate positions)
     public void SetCircleRadius(float newRadius)
     {
         circleRadius = newRadius;
         
-        // Recalculate initial positions
         initialEnemyPositions.Clear();
         float angleStep = 360f / enemyCount;
         
@@ -585,12 +535,10 @@ public class CircleFormation : MonoBehaviour
         }
     }
     
-    // Gizmo to show formation in editor
     void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.cyan;
         
-        // Draw circle outline
         Vector3 center = transform.position;
         float angleStep = 360f / Mathf.Max(enemyCount, 1);
         Vector3 previousPoint = center + new Vector3(circleRadius, 0, 0);
@@ -609,11 +557,9 @@ public class CircleFormation : MonoBehaviour
             previousPoint = currentPoint;
         }
         
-        // Draw boss position
         Gizmos.color = Color.red;
         Gizmos.DrawWireCube(center, Vector3.one * 0.8f);
         
-        // Draw movement direction
         Gizmos.color = Color.yellow;
         Gizmos.DrawRay(transform.position, moveDirection.normalized * 2f);
     }

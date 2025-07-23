@@ -177,10 +177,8 @@ public class EnemyBehaviour : MonoBehaviour
         }
     }
 
-    // Destroy enemy if it moves off-screen
     void OnBecameInvisible()
     {
-        // NEVER destroy bosses - they should be managed by their own scripts
         BossEnemy bossComponent = GetComponent<BossEnemy>();
         if (bossComponent != null)
         {
@@ -188,7 +186,6 @@ public class EnemyBehaviour : MonoBehaviour
             return;
         }
         
-        // Don't destroy if this enemy is part of a formation that's still entering the screen
         if (transform.parent != null)
         {
             StraightRowFormation straightFormation = transform.parent.GetComponent<StraightRowFormation>();
@@ -196,7 +193,6 @@ public class EnemyBehaviour : MonoBehaviour
             CircleFormation circleFormation = transform.parent.GetComponent<CircleFormation>();
             GridFormation gridFormation = transform.parent.GetComponent<GridFormation>();
             
-            // If part of any formation, let the formation handle destruction
             if (straightFormation != null || zigzagFormation != null || circleFormation != null || gridFormation != null)
             {
                 Debug.Log($"EnemyBehaviour: {gameObject.name} is part of formation, not destroying on invisible");
@@ -204,7 +200,6 @@ public class EnemyBehaviour : MonoBehaviour
             }
         }
         
-        // Only destroy if enemy is significantly below the screen (not just off the top/sides)
         Vector3 screenBottom = Camera.main.ViewportToWorldPoint(new Vector3(0, 0, 0));
         if (transform.position.y < screenBottom.y - 5f)
         {
@@ -214,16 +209,15 @@ public class EnemyBehaviour : MonoBehaviour
     }
     
     [Header("Power-Up Drops")]
-    public bool canDropPowerUps = false; // Enable this for enemies that should drop power-ups
+    public bool canDropPowerUps = false;
     public GameObject invincibilityPowerUpPrefab;
     
     [Header("Drop Rates")]
     [Range(0f, 1f)]
-    public float invincibilityDropChance = 0.30f; // 30% chance for special enemies
+    public float invincibilityDropChance = 0.30f;
     
     private void TryDropPowerUp()
     {
-        // Only drop power-ups if this enemy type is configured to do so
         if (!canDropPowerUps)
         {
             return;
@@ -241,7 +235,6 @@ public class EnemyBehaviour : MonoBehaviour
             }
             else
             {
-                // Fallback: create power-up manually
                 CreateInvincibilityPowerUpFallback(dropPosition);
             }
         }
@@ -253,12 +246,10 @@ public class EnemyBehaviour : MonoBehaviour
         powerUp.transform.position = position;
         powerUp.tag = "PowerUp";
         
-        // Add bright, visible sprite
         SpriteRenderer sr = powerUp.AddComponent<SpriteRenderer>();
         sr.color = Color.cyan;
         sr.sortingOrder = 5;
         
-        // Create bright cyan square
         Texture2D texture = new Texture2D(32, 32);
         for (int x = 0; x < 32; x++)
         {
@@ -270,23 +261,19 @@ public class EnemyBehaviour : MonoBehaviour
         texture.Apply();
         sr.sprite = Sprite.Create(texture, new Rect(0, 0, 32, 32), new Vector2(0.5f, 0.5f));
         
-        // Add collider
         CircleCollider2D col = powerUp.AddComponent<CircleCollider2D>();
         col.isTrigger = true;
         
-        // Add power-up behavior
         powerUp.AddComponent<SimplePowerUp>().powerUpType = "Invincibility";
         
         Debug.Log("EnemyBehaviour: Created fallback Invincibility Power-Up");
     }
     
-    // Spawn Protection Methods
     private void StartSpawnProtection()
     {
         isSpawnInvincible = true;
         spawnProtectionCoroutine = StartCoroutine(SpawnProtectionCoroutine());
         
-        // Backup safety mechanism - force remove protection after duration + 1 second
         Invoke(nameof(ForceRemoveProtection), spawnInvincibilityDuration + 1f);
         
         Debug.Log($"Enemy {gameObject.name} spawn protection activated for {spawnInvincibilityDuration} seconds");
@@ -310,7 +297,6 @@ public class EnemyBehaviour : MonoBehaviour
         
         while (Time.time < endTime)
         {
-            // Flash between normal and protected color (light blue tint)
             if (spriteRenderer != null)
             {
                 isFlashing = !isFlashing;
@@ -324,10 +310,9 @@ public class EnemyBehaviour : MonoBehaviour
                 }
             }
             
-            yield return new WaitForSeconds(0.1f); // Flash every 0.1 seconds
+            yield return new WaitForSeconds(0.1f);
         }
         
-        // Restore original color and remove protection
         if (spriteRenderer != null)
         {
             spriteRenderer.color = originalColor;
@@ -337,7 +322,6 @@ public class EnemyBehaviour : MonoBehaviour
         Debug.Log($"Enemy {gameObject.name} spawn protection expired at time: {Time.time}");
     }
     
-    // Public method to manually remove spawn protection (if needed)
     public void RemoveSpawnProtection()
     {
         if (spawnProtectionCoroutine != null)
@@ -346,7 +330,6 @@ public class EnemyBehaviour : MonoBehaviour
             spawnProtectionCoroutine = null;
         }
         
-        // Cancel the backup safety invoke
         CancelInvoke(nameof(ForceRemoveProtection));
         
         if (spriteRenderer != null)

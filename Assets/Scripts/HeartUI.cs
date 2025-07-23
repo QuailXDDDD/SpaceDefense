@@ -192,7 +192,6 @@ public class HeartUI : MonoBehaviour
                 float progress = elapsedTime / heartLossAnimationDuration;
                 float animValue = heartLossAnimationCurve.Evaluate(progress);
                 
-                // Scale and color animation
                 heartImage.transform.localScale = originalScale * (0.5f + animValue * 0.5f);
                 heartImage.color = Color.Lerp(Color.red, Color.white, animValue);
                 
@@ -200,13 +199,11 @@ public class HeartUI : MonoBehaviour
                 yield return null;
             }
             
-            // Restore original scale and set final color
             heartImage.transform.localScale = originalScale;
             heartImage.color = Color.white;
         }
     }
     
-    // Public methods for external health updates
     public void OnPlayerTakeDamage(int currentHealth)
     {
         UpdateHeartDisplay(currentHealth);
@@ -217,12 +214,10 @@ public class HeartUI : MonoBehaviour
         UpdateHeartDisplay(currentHealth);
     }
     
-    // Method to create default heart sprites if none are assigned
     public void CreateDefaultHeartSprites()
     {
         if (fullHeartSprite == null)
         {
-            // Create a simple red square as full heart (fallback)
             Texture2D fullHeartTexture = new Texture2D(32, 32);
             for (int x = 0; x < 32; x++)
             {
@@ -237,7 +232,6 @@ public class HeartUI : MonoBehaviour
         
         if (emptyHeartSprite == null)
         {
-            // Create a simple gray square as empty heart (fallback)
             Texture2D emptyHeartTexture = new Texture2D(32, 32);
             for (int x = 0; x < 32; x++)
             {
@@ -253,7 +247,6 @@ public class HeartUI : MonoBehaviour
     
     void OnValidate()
     {
-        // Ensure settings are valid
         maxHealth = maxHearts * healthPerHeart;
         
         if (healthPerHeart <= 0)
@@ -267,17 +260,13 @@ public class HeartUI : MonoBehaviour
         }
     }
     
-    // Reset method for new game
     public void ResetForNewGame()
     {
-        // Reset internal state
         currentHearts = maxHearts;
         previousHealth = maxHealth;
         
-        // Find the new player ship
         playerShip = FindFirstObjectByType<PlayerShip>();
         
-        // Reset all hearts to full
         for (int i = 0; i < heartImages.Count && i < maxHearts; i++)
         {
             if (heartImages[i] != null)

@@ -192,25 +192,21 @@ public class WaveManager : MonoBehaviour
     {
         Debug.Log("WaveManager: Creating Wave 2 - Grid Formation");
         
-        // Check if prefab is assigned
         if (wave2EnemyPrefab == null)
         {
             Debug.LogError("WaveManager: Wave 2 Enemy Prefab is not assigned!");
             yield break;
         }
         
-        // Create formation container
         currentFormation = new GameObject("Wave2_Grid");
         currentFormation.transform.position = offScreenSpawnPosition;
         
-        // Ensure formation container doesn't interfere with player bullets
         Collider2D formationCollider = currentFormation.GetComponent<Collider2D>();
         if (formationCollider != null)
         {
             Destroy(formationCollider);
         }
         
-        // Add GridFormation component
         GridFormation formation = currentFormation.AddComponent<GridFormation>();
         formation.enemyPrefab = wave2EnemyPrefab;
         formation.rows = wave2Rows;
@@ -222,10 +218,8 @@ public class WaveManager : MonoBehaviour
         
         Debug.Log($"WaveManager: Grid formation component added, waiting for enemies to spawn...");
         
-        // Wait longer for the formation to initialize and spawn enemies
         yield return new WaitForSeconds(0.1f);
         
-        // Wait until enemies are actually spawned
         float timeout = 5f;
         float elapsed = 0f;
         int expectedCount = wave2Rows * wave2Cols;
@@ -241,7 +235,6 @@ public class WaveManager : MonoBehaviour
             yield break;
         }
         
-        // Get references to all spawned enemies
         for (int i = 0; i < currentFormation.transform.childCount; i++)
         {
             activeEnemies.Add(currentFormation.transform.GetChild(i).gameObject);
@@ -254,25 +247,21 @@ public class WaveManager : MonoBehaviour
     {
         Debug.Log("WaveManager: Creating Wave 3 - ZigZag Formation");
         
-        // Check if prefab is assigned
         if (wave3EnemyPrefab == null)
         {
             Debug.LogError("WaveManager: Wave 3 Enemy Prefab is not assigned!");
             yield break;
         }
         
-        // Create formation container
         currentFormation = new GameObject("Wave3_ZigZag");
         currentFormation.transform.position = offScreenSpawnPosition;
         
-        // Ensure formation container doesn't interfere with player bullets
         Collider2D formationCollider = currentFormation.GetComponent<Collider2D>();
         if (formationCollider != null)
         {
             Destroy(formationCollider);
         }
         
-        // Add ZigZagFormation component
         ZigZagFormation1 formation = currentFormation.AddComponent<ZigZagFormation1>();
         formation.enemyPrefab = wave3EnemyPrefab;
         formation.rows = wave3Rows;
@@ -284,10 +273,8 @@ public class WaveManager : MonoBehaviour
         
         Debug.Log($"WaveManager: ZigZag formation component added, waiting for enemies to spawn...");
         
-        // Wait longer for the formation to initialize and spawn enemies
         yield return new WaitForSeconds(0.1f);
         
-        // Wait until enemies are actually spawned
         float timeout = 5f;
         float elapsed = 0f;
         while (currentFormation.transform.childCount == 0 && elapsed < timeout)
@@ -302,7 +289,6 @@ public class WaveManager : MonoBehaviour
             yield break;
         }
         
-        // Get references to all spawned enemies
         for (int i = 0; i < currentFormation.transform.childCount; i++)
         {
             activeEnemies.Add(currentFormation.transform.GetChild(i).gameObject);
@@ -315,7 +301,6 @@ public class WaveManager : MonoBehaviour
     {
         Debug.Log("WaveManager: Creating Wave 4 - Circle Formation with Boss");
         
-        // Check if prefabs are assigned
         if (wave4EnemyPrefab == null)
         {
             Debug.LogError("WaveManager: Wave 4 Enemy Prefab is not assigned!");
@@ -328,18 +313,15 @@ public class WaveManager : MonoBehaviour
             yield break;
         }
         
-        // Create formation container
         currentFormation = new GameObject("Wave4_Circle");
         currentFormation.transform.position = offScreenSpawnPosition;
         
-        // Ensure formation container doesn't interfere with player bullets
         Collider2D formationCollider = currentFormation.GetComponent<Collider2D>();
         if (formationCollider != null)
         {
             Destroy(formationCollider);
         }
         
-        // Add CircleFormation component
         CircleFormation formation = currentFormation.AddComponent<CircleFormation>();
         formation.enemyPrefab = wave4EnemyPrefab;
         formation.specialEnemyPrefab = wave4SpecialEnemyPrefab;
@@ -353,10 +335,8 @@ public class WaveManager : MonoBehaviour
         
         Debug.Log($"WaveManager: Circle formation component added, waiting for enemies and boss to spawn...");
         
-        // Wait longer for the formation to initialize and spawn enemies
         yield return new WaitForSeconds(0.1f);
         
-        // Wait until enemies are actually spawned (should be enemies + boss)
         float timeout = 5f;
         float elapsed = 0f;
         int expectedCount = wave4EnemyCount + 1;

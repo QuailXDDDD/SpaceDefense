@@ -355,7 +355,7 @@ public class PlayerShip : MonoBehaviour
         }
     }
     
-    // Power-Up Management Methods
+
     public void ActivateInvincibility()
     {
         if (invincibilityCoroutine != null)

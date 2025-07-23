@@ -43,10 +43,8 @@ public class LeaderboardManager : MonoBehaviour
     {
         Debug.Log("LeaderboardManager: Clearing all data and disabling sample entries");
         
-        // Clear all entries
         ClearLeaderboard();
         
-        // Disable sample creation
         enableDebugLogs = false;
         
         Debug.Log("LeaderboardManager: All data cleared, sample entries disabled");
@@ -57,12 +55,10 @@ public class LeaderboardManager : MonoBehaviour
     {
         Debug.Log("LeaderboardManager: Performing complete reset - deleting all saved data");
         
-        // Clear in-memory data
         leaderboardEntries.Clear();
         
-        // Clear PlayerPrefs data completely
         int entryCount = PlayerPrefs.GetInt(ENTRY_COUNT_KEY, 0);
-        for (int i = 0; i < 50; i++) // Clear up to 50 entries to be safe
+        for (int i = 0; i < 50; i++)
         {
             string entryKey = LEADERBOARD_KEY + "_Entry_" + i;
             if (PlayerPrefs.HasKey(entryKey))
@@ -73,10 +69,8 @@ public class LeaderboardManager : MonoBehaviour
         PlayerPrefs.DeleteKey(ENTRY_COUNT_KEY);
         PlayerPrefs.Save();
         
-        // Disable sample creation
         enableDebugLogs = false;
         
-        // Notify UI
         OnLeaderboardUpdated?.Invoke(leaderboardEntries);
         
         Debug.Log("LeaderboardManager: Complete reset finished - all data deleted");

@@ -99,14 +99,12 @@ public class GridFormation : MonoBehaviour
     {
         Debug.Log($"GridFormation: Starting to create {rows}x{cols} grid formation");
         
-        // Check if enemy prefab is assigned
         if (enemyPrefab == null)
         {
             Debug.LogError("GridFormation: Enemy prefab is not assigned!");
             return;
         }
         
-        // Calculate formation dimensions and offset to center it
         float formationWidth = (cols - 1) * spacing;
         float formationHeight = (rows - 1) * spacing;
         Vector3 offset = new Vector3(-formationWidth / 2f, formationHeight / 2f, 0);
@@ -115,13 +113,11 @@ public class GridFormation : MonoBehaviour
         {
             for (int col = 0; col < cols; col++)
             {
-                // Calculate position for this enemy
                 Vector3 gridPosition = new Vector3(col * spacing, -row * spacing, 0) + offset;
                 Vector3 worldPosition = transform.position + gridPosition;
                 
                 Debug.Log($"GridFormation: Spawning enemy at row {row}, col {col}, position {worldPosition}");
                 
-                // Spawn enemy
                 GameObject enemy = Instantiate(enemyPrefab, worldPosition, Quaternion.identity, transform);
                 
                 if (enemy == null)
@@ -130,17 +126,14 @@ public class GridFormation : MonoBehaviour
                     continue;
                 }
                 
-                // Set scale only if different from current scale
                 if (enemy.transform.localScale != enemyScale)
                 {
                     enemy.transform.localScale = enemyScale;
                 }
                 
-                // Check if enemy has required components and fix missing EnemyData
                 EnemyBehaviour enemyBehaviour = enemy.GetComponent<EnemyBehaviour>();
                 if (enemyBehaviour != null && enemyBehaviour.enemyData == null)
                 {
-                    // Try to get EnemyData from the prefab's original components
                     EnemyBehaviour prefabEnemyBehaviour = enemyPrefab.GetComponent<EnemyBehaviour>();
                     if (prefabEnemyBehaviour != null && prefabEnemyBehaviour.enemyData != null)
                     {
@@ -153,7 +146,6 @@ public class GridFormation : MonoBehaviour
                     }
                 }
                 
-                // Disable any existing EnemyMover component since formation handles all movement
                 EnemyMover mover = enemy.GetComponent<EnemyMover>();
                 if (mover != null)
                 {
@@ -174,7 +166,6 @@ public class GridFormation : MonoBehaviour
         Vector3 startPos = transform.position;
         float timer = 0f;
         
-        // Disable enemy behaviors during entry to prevent premature destruction
         foreach (GameObject enemy in enemies)
         {
             if (enemy != null)
@@ -208,13 +199,11 @@ public class GridFormation : MonoBehaviour
             Debug.Log($"GridFormation: Formation will continue MOVING DOWN through screen");
         }
         
-        // FORCE the movement to start by ensuring all flags are correct
         if (stayInPosition)
         {
             Debug.Log("GridFormation: stayInPosition is TRUE - formation will hold position");
         }
         
-        // Re-enable enemy behaviors but NOT individual movement
         foreach (GameObject enemy in enemies)
         {
             if (enemy != null)
@@ -226,15 +215,12 @@ public class GridFormation : MonoBehaviour
                     enemyBehaviour.EnableImmediateShooting();
                 }
                 
-                // IMPORTANT: Do NOT enable EnemyMover - formation handles all movement
-                // Keep enemies in formation by ensuring their relative positions are maintained
                 EnemyMover mover = enemy.GetComponent<EnemyMover>();
                 if (mover != null)
                 {
-                    mover.enabled = false; // Keep disabled to maintain formation
+                    mover.enabled = false;
                 }
                 
-                // Enable immediate shooting for any attack components
                 BasicAttacker basicAttacker = enemy.GetComponent<BasicAttacker>();
                 if (basicAttacker != null)
                 {
@@ -260,32 +246,27 @@ public class GridFormation : MonoBehaviour
     
     void CleanupDestroyedEnemies()
     {
-        // Remove null references (destroyed enemies)
         enemies.RemoveAll(enemy => enemy == null);
     }
     
-    // Public method to check if formation is cleared
     public bool IsFormationCleared()
     {
         CleanupDestroyedEnemies();
         return enemies.Count == 0;
     }
     
-    // Public method to get the number of remaining enemies
     public int GetRemainingEnemyCount()
     {
         CleanupDestroyedEnemies();
         return enemies.Count;
     }
     
-    // Public method to get all active enemies
     public List<GameObject> GetActiveEnemies()
     {
         CleanupDestroyedEnemies();
         return new List<GameObject>(enemies);
     }
     
-    // Gizmo to show formation in editor
     void OnDrawGizmosSelected()
     {
         if (enemyPrefab == null) return;
@@ -305,7 +286,6 @@ public class GridFormation : MonoBehaviour
             }
         }
         
-        // Draw movement direction
         Gizmos.color = Color.red;
         Gizmos.DrawRay(transform.position, moveDirection.normalized * 2f);
     }
