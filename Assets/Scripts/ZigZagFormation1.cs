@@ -49,8 +49,12 @@ public class ZigZagFormation1 : MonoBehaviour
         if (spawnFromOffScreen)
         {
             float screenHeight = mainCam.orthographicSize;
-            targetPosition = new Vector3(0, screenHeight * 0.7f, 0);
-            Debug.Log($"ZigZagFormation1: Starting at {transform.position}, target: {targetPosition}");
+            // Điều chỉnh target position để đảm bảo toàn bộ formation hiển thị trong khung hình
+            // Tính toán position sao cho hàng trên cùng không bị ra ngoài màn hình
+            float maxY = screenHeight - 0.5f; // Để lại khoảng trống 0.5f từ edge
+            float formationTopOffset = formationHeight / 2f;
+            targetPosition = new Vector3(0, Mathf.Min(screenHeight * 0.7f, maxY - formationTopOffset), 0);
+            Debug.Log($"ZigZagFormation1: Starting at {transform.position}, target: {targetPosition}, formationHeight: {formationHeight}");
         }
         else
         {
@@ -90,6 +94,9 @@ public class ZigZagFormation1 : MonoBehaviour
 
     void CreateZigzagFormation()
     {
+        float minY = float.MaxValue;
+        float maxY = float.MinValue;
+        
         for (int row = 0; row < rows; row++)
         {
             EnemyRow enemyRow = new EnemyRow();
@@ -107,8 +114,13 @@ public class ZigZagFormation1 : MonoBehaviour
                 float formationWidth = (cols - 1) * spacing;
                 Vector3 offset = new Vector3(-formationWidth / 2f, formationHeight / 2f, 0);
                 Vector3 pos = new Vector3(xPos, yPos, 0) + offset;
+                Vector3 worldPos = transform.position + pos;
                 
-                GameObject enemy = Instantiate(enemyPrefab, transform.position + pos, Quaternion.identity, transform);
+                // Track min/max Y positions
+                minY = Mathf.Min(minY, worldPos.y);
+                maxY = Mathf.Max(maxY, worldPos.y);
+                
+                GameObject enemy = Instantiate(enemyPrefab, worldPos, Quaternion.identity, transform);
                 
                 if (enemy.transform.localScale != enemyScale)
                 {
@@ -120,6 +132,19 @@ public class ZigZagFormation1 : MonoBehaviour
             
             enemyRows.Add(enemyRow);
         }
+        
+        // Debug log để kiểm tra vị trí formation
+        float screenHeight = Camera.main.orthographicSize;
+        Debug.Log($"ZigZagFormation1: Formation created. Y range: {minY:F2} to {maxY:F2} (Screen height: -{screenHeight:F2} to {screenHeight:F2})");
+        
+        if (maxY > screenHeight)
+        {
+            Debug.LogWarning($"ZigZagFormation1: Formation extends above screen! Top at {maxY:F2}, screen top at {screenHeight:F2}");
+        }
+        if (minY < -screenHeight)
+        {
+            Debug.LogWarning($"ZigZagFormation1: Formation extends below screen! Bottom at {minY:F2}, screen bottom at {-screenHeight:F2}");
+        }
     }
     
     System.Collections.IEnumerator EntryMovement()
@@ -127,7 +152,7 @@ public class ZigZagFormation1 : MonoBehaviour
         Vector3 startPos = transform.position;
         Debug.Log($"ZigZagFormation1: Starting entry movement from {startPos} to {targetPosition} over {entryDuration} seconds");
         
-        // Temporarily disable enemy behaviors during entry to prevent off-screen destruction
+
         List<EnemyBehaviour> enemyBehaviours = new List<EnemyBehaviour>();
         foreach (EnemyRow row in enemyRows)
         {
@@ -153,7 +178,6 @@ public class ZigZagFormation1 : MonoBehaviour
             transform.position = Vector3.Lerp(startPos, targetPosition, progress);
             timer += Time.deltaTime;
             
-            // Debug progress every 0.5 seconds
             if (timer % 0.5f < Time.deltaTime)
             {
                 Debug.Log($"ZigZagFormation1: Entry progress {(progress * 100):F0}% - Position: {transform.position}");
@@ -165,7 +189,7 @@ public class ZigZagFormation1 : MonoBehaviour
         transform.position = targetPosition;
         hasEnteredScreen = true;
         
-        // Re-enable enemy behaviors
+
         foreach (EnemyBehaviour enemyBehaviour in enemyBehaviours)
         {
             if (enemyBehaviour != null)
@@ -176,7 +200,7 @@ public class ZigZagFormation1 : MonoBehaviour
         
         Debug.Log($"ZigZagFormation1: Entry complete! Final position: {targetPosition}, starting zigzag movement. StayInPosition: {stayInPosition}");
         
-        // Enable enemy shooting immediately after entry
+
         foreach (EnemyRow row in enemyRows)
         {
             foreach (GameObject enemy in row.enemies)
@@ -190,7 +214,7 @@ public class ZigZagFormation1 : MonoBehaviour
                         enemyBehaviour.EnableImmediateShooting();
                     }
                     
-                    // Also enable immediate shooting for any attack components
+            
                     BasicAttacker basicAttacker = enemy.GetComponent<BasicAttacker>();
                     if (basicAttacker != null)
                     {
@@ -271,7 +295,7 @@ public class ZigZagFormation1 : MonoBehaviour
         }
     }
     
-    // Public method to check if formation is cleared
+
     public bool IsFormationCleared()
     {
         int totalEnemies = 0;
@@ -282,7 +306,6 @@ public class ZigZagFormation1 : MonoBehaviour
         return totalEnemies == 0;
     }
     
-    // Public method to get the number of remaining enemies
     public int GetRemainingEnemyCount()
     {
         int count = 0;
