@@ -10,6 +10,7 @@ public class StartScreenManager : MonoBehaviour
     public Button exitButton;
     
     [Header("Scene Settings")]
+    public string scrollingTextSceneName = "ScrollingText";
     public string gameSceneName = "SampleScene";
     public string leaderboardSceneName = "LeaderBoardsScreen";
     
@@ -73,14 +74,14 @@ public class StartScreenManager : MonoBehaviour
     
     public void StartGame()
     {
-        Debug.Log("StartScreenManager: Starting game - Loading " + gameSceneName);
+        Debug.Log("StartScreenManager: Starting game - Loading " + scrollingTextSceneName);
         
         if (AudioManager.Instance != null)
         {
             AudioManager.Instance.PlayPowerUp();
         }
         
-        SceneManager.LoadScene(gameSceneName);
+        SceneManager.LoadScene(scrollingTextSceneName);
     }
     
     public void ShowLeaderboards()

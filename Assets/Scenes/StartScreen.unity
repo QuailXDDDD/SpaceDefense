@@ -413,7 +413,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Space Defense
+  m_text: space force
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: f8c2ab69e2f5a284682d756f5bda40d7, type: 2}
   m_sharedMaterial: {fileID: 3130348751660329755, guid: f8c2ab69e2f5a284682d756f5bda40d7, type: 2}

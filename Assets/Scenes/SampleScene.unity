@@ -426,7 +426,7 @@ MonoBehaviour:
   wave3EnemyPrefab: {fileID: 1802444353607308612, guid: 51928b0f2c32337438312f1df46ae290, type: 3}
   wave3Rows: 3
   wave3Cols: 6
-  wave3Spacing: 2
+  wave3Spacing: 1.5
   wave3MoveSpeed: 1
   wave4EnemyPrefab: {fileID: 1802444353607308612, guid: 51928b0f2c32337438312f1df46ae290, type: 3}
   wave4SpecialEnemyPrefab: {fileID: 1802444353607308612, guid: 545d36e7f0cf8d1418f355fc4d0a4c68, type: 3}

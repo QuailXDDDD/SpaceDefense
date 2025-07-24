@@ -97,6 +97,7 @@
     <Compile Include="Assets\Scripts\WaveManager.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\TMP_UiFrameRateCounter.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\VertexZoom.cs" />
+    <Compile Include="Assets\Scripts\ScrollingTextManager.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\TMP_TextSelector_B.cs" />
     <Compile Include="Assets\Scripts\ZigZagFormation1.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\SkewTextExample.cs" />
@@ -104,6 +105,7 @@
     <Compile Include="Assets\Scripts\EnemyProjectile.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\ShaderPropAnimator.cs" />
     <Compile Include="Assets\HealthHeartSystem\Scripts\PlayerStats.cs" />
+    <Compile Include="Assets\Scripts\FadeController.cs" />
     <Compile Include="Assets\Scripts\LeaderboardEntry.cs" />
     <Compile Include="Assets\Scripts\PlayerShip.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\TMP_TextInfoDebugTool.cs" />

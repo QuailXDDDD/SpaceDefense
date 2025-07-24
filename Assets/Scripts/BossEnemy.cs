@@ -37,7 +37,7 @@ public class BossEnemy : Enemy
     }
     
     void OnEnable()
-    {
+{
         Debug.Log($"Boss: OnEnable called. EnteredArena: {enteredArena}, HasSpawnProtection: {hasSpawnProtection}");
         
         EnsureSpriteVisibility();
